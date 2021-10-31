@@ -1,0 +1,14 @@
+# Hosts for Gammasite
+
+[gammasite]
+haproxy
+
+# HAproxy Servers
+[proxies]
+haproxy
+
+
+[gammasite:vars]
+site_name=gammasite
+ssl_domain=gammasite.garvbox.net
+email=support@garvbox.net

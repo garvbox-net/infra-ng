@@ -1,0 +1,78 @@
+
+
+- name: Packages Install
+  apt:
+    pkg:
+    - haproxy
+    - certbot
+
+
+- name: Check if Cert is set up
+  stat:
+    path: "/etc/letsencrypt/live"
+  register: letsencrypt_stat
+
+# If Cert setup stop HAProxy and run initial config
+
+- name: Run Initial LetsEncrypt Cert Config
+  block:
+    - name: Stop HAproxy
+      systemd:
+        name: haproxy
+        state: stopped
+    # Dont bother restarting as we will reload the config
+    # after SSL cert build and restart it then
+
+    - name: Run initial Cert Setup Staging Dry Run
+      command:
+        cmd: "certbot certonly --standalone --preferred-challenges http --http-01-port 80 -d {{ ssl_domain }} --email {{ email }} --agree-tos -n --dry-run --staging"
+
+    - name: Run initial Cert Setup
+      command:
+        cmd: "certbot certonly --standalone --preferred-challenges http --http-01-port 80 -d {{ ssl_domain }} --email {{ email }} --agree-tos -n"
+
+    - name: Build HAproxy SSL Cert
+      shell: "cat /etc/letsencrypt/live/{{ssl_domain}}/fullchain.pem /etc/letsencrypt/live/{{ssl_domain}}/privkey.pem > /etc/ssl/private/{{ssl_domain}}.pem"
+      args:
+        creates: "/etc/ssl/private/{{ssl_domain}}.pem"
+  when: not letsencrypt_stat.stat.exists
+
+- name: Copy Cert Renewer Script
+  copy:
+    src: certbot_renew.py
+    dest: /etc/certbot_renew.py
+    mode: "0744"
+
+- name: Push Cert Renewer Config
+  template:
+    src: certbot_renew.cfg.j2
+    dest: /etc/certbot_renew.cfg
+    mode: "0644"
+
+- name: Set up certbot Crontab
+  cron:
+    name: "Renew Certs"
+    minute: "0"
+    hour: "0"
+    day: "1"
+    job: "/usr/bin/python3 /etc/certbot_renew.py &>> /var/tmp/update_certs.log"
+
+- name: Deploy HAproxy Errors
+  copy:
+    src: errors/
+    dest: /etc/haproxy/errors/
+    mode: "0644"
+
+- name: Deploy HAproxy Config
+  copy:
+    src: haproxy-{{site_name}}.cfg
+    dest: /etc/haproxy/haproxy.cfg
+    mode: "0644"
+    validate: "/usr/sbin/haproxy -c -f %s"
+  register: copied_config
+
+- name: Restart HAproxy
+  systemd:
+    name: haproxy
+    state: restarted
+  when: copied_config.changed

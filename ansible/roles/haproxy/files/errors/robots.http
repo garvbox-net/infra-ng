@@ -1,0 +1,8 @@
+HTTP/1.0 200 Found
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/plain
+
+# Block All Bots
+User-agent: *
+Disallow: /

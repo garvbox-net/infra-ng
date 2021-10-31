@@ -1,0 +1,8 @@
+HTTP/1.0 403 Forbidden
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+
+<html><body><h1>External Access to Resource Blocked</h1>
+You have tried to access a resource which is restricted to internal access only.
+</body></html>

@@ -1,0 +1,10 @@
+HTTP/1.0 503 Service Unavailable
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+
+<html><body><h1>503 Service Unavailable</h1>
+No back-end server has been configured for this address
+<br>
+If you think this is an error then contact support@garvbox.net
+</body></html>

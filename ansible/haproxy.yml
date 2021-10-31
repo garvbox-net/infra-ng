@@ -1,0 +1,9 @@
+# Build HAproxy Setup
+
+---
+- name: Install & Configure Container for HAproxy with SSL Certbot Setup
+  hosts: proxies
+  become: true
+
+  roles:
+     - haproxy
