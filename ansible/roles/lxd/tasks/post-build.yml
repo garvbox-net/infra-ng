@@ -1,0 +1,25 @@
+# Post-build Tasks for container config
+# Seperated into their own tasks file to allow use outside of creation
+- name: Run post-build container discovery (test connection)
+  setup:
+
+- name: Configure security policy for Docker Host
+  community.general.lxd_container:
+    name: "{{ inventory_hostname }}"
+    config:
+      security.nesting: "true"
+  when: lxd_docker_host
+  delegate_to: "{{lxd_server}}"
+
+- name: Create Group for Default User
+  ansible.builtin.group:
+    name: "{{ admin_user_name }}"
+    gid: "{{ admin_user_gid | default(admin_user_uid) }}"
+
+- name: Setup Default user ID
+  ansible.builtin.user:
+    name: "{{ admin_user_name }}"
+    uid: "{{ admin_user_uid }}"
+    group: "{{ admin_user_name }}"
+    groups: ["sudo"]
+    password: "{{ admin_user_pass_enc }}"

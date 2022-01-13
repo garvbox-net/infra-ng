@@ -1,0 +1,15 @@
+
+# Default LXD Server
+# Used to delegate tasks for building containers, and when running commands on container
+lxd_server: "localhost"
+
+# Recreate option for automatic delete and recreate
+lxd_recreate: false
+
+# Enable for host to turn on docker policy settings
+lxd_docker_host: false
+
+# User Creation for new containers
+admin_user_name: garvin
+admin_user_uid: 1666
+admin_user_pass_enc: "$6$mi1neuur$qXfu9fS5lcc01BCC.kyeU6NKUlVdXdG9pm20NX8GB7ODb9PP2KxEIcYZWtdzibz5nRpKVBEN4n1fizBOUrKi30"

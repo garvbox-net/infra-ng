@@ -1,0 +1,15 @@
+# Build a New Container and configure as a standardised host (or apply install process to existing)
+# NOTE: requires lxc command and remote configured to the target LXC server
+
+# Support for container deletion is available using "-e lxd_operation=delete", or
+# using host vars
+
+- name: Build & Configure LXD Container
+  hosts: lxd_containers
+  gather_facts: no
+
+  tasks:
+    - name: LXD Container Build
+      ansible.builtin.include_role:
+        name: lxd
+        tasks_from: "{{ lxd_operation | default('create') }}"

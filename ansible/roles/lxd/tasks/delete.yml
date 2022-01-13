@@ -1,0 +1,20 @@
+
+# Block used for delegation - all this will run on the LXD host
+- name: Stop and Delete Container '{{ inventory_hostname }}'
+  delegate_to: "{{lxd_server}}"
+  block:
+    - name: Check for existing Container
+      ansible.builtin.command: "lxc info {{inventory_hostname}}"
+      register: cmd_container_exists
+      failed_when: false  # step cannot fail - checking resp code below for neater output
+
+    - name: Stop if Container doesnt exist
+      ansible.builtin.fail:
+        msg: "LXD Container '{{ inventory_hostname }}' doesn't exist"
+      when: cmd_container_exists.rc != 0
+
+    - name: Delete Container
+      community.general.lxd_container:
+        name: "{{ inventory_hostname }}"
+        state: absent
+        timeout: 600

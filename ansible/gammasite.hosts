@@ -1,14 +1,10 @@
-# Hosts for Gammasite
-
-[gammasite]
-haproxy
+# Ansible Inventory for Gammasite
 
 # HAproxy Servers
 [proxies]
 haproxy
 
-
-[gammasite:vars]
+[proxies:vars]
 site_name=gammasite
 ssl_domain=gammasite.garvbox.net
 email=support@garvbox.net
