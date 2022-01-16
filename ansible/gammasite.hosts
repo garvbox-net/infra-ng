@@ -8,3 +8,12 @@ haproxy
 site_name=gammasite
 ssl_domain=gammasite.garvbox.net
 email=support@garvbox.net
+
+# LXD Containers
+[lxd_containers]
+testbuild
+
+[lxd_containers:vars]
+ansible_connection=lxd
+
+

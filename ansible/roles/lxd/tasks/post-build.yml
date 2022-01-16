@@ -1,8 +1,6 @@
 # Post-build Tasks for container config
 # Seperated into their own tasks file to allow use outside of creation
-- name: Run post-build container discovery (test connection)
-  setup:
-
+---
 - name: Configure security policy for Docker Host
   community.general.lxd_container:
     name: "{{ inventory_hostname }}"

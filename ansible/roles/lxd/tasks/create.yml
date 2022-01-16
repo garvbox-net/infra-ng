@@ -32,8 +32,4 @@
         profiles: ["default"]
         wait_for_ipv4_addresses: true
         timeout: 600
-      when: ! container_exists
-
-- name: "Trigger post-build setup tasks"
-  include_tasks:
-    file: post-build.yml
+      when: (not container_exists) or lxd_recreate | bool

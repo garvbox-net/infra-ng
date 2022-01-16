@@ -10,6 +10,11 @@
 
   tasks:
     - name: LXD Container Build
-      ansible.builtin.include_role:
+      ansible.builtin.import_role:
         name: lxd
-        tasks_from: "{{ lxd_operation | default('create') }}"
+        tasks_from: create
+
+    - name: Post-Build Config tasks
+      ansible.builtin.import_role:
+        name: lxd
+        tasks_from: post-build
