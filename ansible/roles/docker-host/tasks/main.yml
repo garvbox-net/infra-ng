@@ -1,0 +1,79 @@
+
+# Docker Role to install and configure docker engine and compose anywhere
+# NOTE: use the var docker_network_bridge=false if you wish to force a docker install
+#   without the network bridge, i.e. forcing the use of "hostmode" container networking only
+---
+# The lxd role has all the defaults and settings already for this so just import the role
+- name: Configure lxd security policy
+  ansible.builtin.import_role:
+    name: lxd
+    tasks_from: docker-policy
+
+- name: Get dpkg Architecture
+  ansible.builtin.command:
+    cmd: dpkg --print-architecture
+  register: dpkg_arch
+
+- name: Check for existing GPG key
+  ansible.builtin.stat:
+    path: "{{ docker_keyring }}"
+  register: stat_keyring
+
+- name: Store repo key in keyring
+  ansible.builtin.shell:
+    cmd: "curl -fsSL {{ docker_repo_source }}/gpg | gpg --no-tty --yes --dearmor -o {{ docker_keyring }}"
+  when: not stat_keyring.stat.exists
+
+- name: Add specified repository into sources list
+  ansible.builtin.apt_repository:
+    repo: "deb [arch={{dpkg_arch.stdout | trim}} signed-by={{ docker_keyring }}] {{ docker_repo_source }} {{ ansible_distribution_release }} stable"
+    filename: docker
+    state: present
+
+- name: Install Docker
+  ansible.builtin.apt:
+    state: latest
+    name: "{{docker_packages}}"
+  register: installed_docker
+
+- name: Add Admin user to Docker group
+  ansible.builtin.user:
+    name: "{{ admin_user_name }}"
+    groups: docker
+    append: true
+
+- name: Make Docker CLI plugins directory
+  ansible.builtin.file:
+    path: "{{ docker_cli_plugin_dir }}" 
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: "Install Docker-compose - Version: {{ docker_compose_version }}, Arch: {{ ansible_architecture }}"
+  ansible.builtin.get_url:
+    url: https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-{{ ansible_architecture }}
+    dest: "{{ docker_cli_plugin_dir }}/docker-compose"
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Create docker etc directory
+  ansible.builtin.file:
+    path: /etc/docker
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+  register: create_dir
+  when: not docker_network_bridge
+
+- name: Disable Docker Network Bridge
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    src: docker_daemon.json
+    owner: root
+    group: root
+    mode: '0644'
+  when: not docker_network_bridge
+  notify: restart_docker_daemon

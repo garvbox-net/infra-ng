@@ -13,8 +13,20 @@
       ansible.builtin.import_role:
         name: lxd
         tasks_from: create
+      tags: build
 
-    - name: Post-Build Config tasks
+    # Post-Build Configuration and software Installation
+    - name: Post-Build discovery
+      ansible.builtin.setup:
+      tags: setup,docker
+
+    - name: Configure Base OS
       ansible.builtin.import_role:
-        name: lxd
-        tasks_from: post-build
+        name: base-setup
+      tags: setup
+
+    - name: Install Docker
+      ansible.builtin.import_role:
+        name: docker-host
+      when: lxd_docker_host
+      tags: setup,docker
