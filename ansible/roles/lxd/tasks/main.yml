@@ -1,0 +1,35 @@
+
+# Block used for delegation - all this will run on the LXD host
+- name: "Create Standardised LXD Container"
+  delegate_to: localhost
+  block:
+    - name: Check for existing Container
+      ansible.builtin.command: "lxc info {{inventory_hostname}}"
+      register: cmd_container_exists
+      failed_when: false  # step should not fail
+
+    - ansible.builtin.set_fact:
+        container_exists: "{{ cmd_container_exists.rc == 0 }}"
+    
+    - name: Trigger Container Deletion on recreate
+      community.general.lxd_container:
+        name: "{{ inventory_hostname }}"
+        state: absent
+        timeout: 600
+      when: container_exists and lxd_recreate | bool
+
+    - name: Create a started container
+      community.general.lxd_container:
+        name: "{{ inventory_hostname }}"
+        state: started
+        source:
+          type: image
+          mode: pull
+          # server: https://images.linuxcontainers.org
+          server: https://cloud-images.ubuntu.com/releases
+          protocol: simplestreams
+          alias: focal
+        profiles: ["default"]
+        wait_for_ipv4_addresses: true
+        timeout: 600
+      when: (not container_exists) or lxd_recreate | bool

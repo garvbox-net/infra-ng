@@ -1,0 +1,6 @@
+
+# Recreate option for automatic delete and recreate
+lxd_recreate: false
+
+# Enable for host to turn on docker policy settings
+lxd_docker_host: false

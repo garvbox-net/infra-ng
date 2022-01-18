@@ -1,0 +1,32 @@
+# Default Ubuntu Container Setup
+---
+
+- name: Disable IPv6
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-disable-ipv6.conf
+    src: disable-ipv6.conf
+    owner: root
+    group: root
+    mode: '0644'
+  register: ipv6_sysctl_conf
+
+- name: Reload sysctl config
+  ansible.builtin.command:
+    cmd: sysctl -q -f /etc/sysctl.d/99-disable-ipv6.conf
+  when: ipv6_sysctl_conf.changed
+
+- name: Create Group for Default User
+  ansible.builtin.group:
+    name: "{{ admin_user_name }}"
+    gid: "{{ admin_user_gid | default(admin_user_uid) }}"
+
+- name: Setup Default user ID
+  ansible.builtin.user:
+    name: "{{ admin_user_name }}"
+    uid: "{{ admin_user_uid }}"
+    group: "{{ admin_user_name }}"
+    groups: sudo
+    append: true
+    password: "{{ admin_user_pass_enc }}"
+    create_home: true
+    shell: /bin/bash

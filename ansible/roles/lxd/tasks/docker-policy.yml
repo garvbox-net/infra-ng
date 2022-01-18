@@ -1,0 +1,8 @@
+
+- name: Configure lxd security policy for Docker Host
+  community.general.lxd_container:
+    name: "{{ inventory_hostname }}"
+    config:
+      security.nesting: "true"
+  when: lxd_docker_host
+  delegate_to: localhost

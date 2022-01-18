@@ -1,0 +1,10 @@
+# Build a New Container and configure as a standardised host (or apply install process to existing)
+# NOTE: this must be run from the LXD server only, remote setups are not working
+
+- name: Build & Configure LXD Container
+  hosts: lxd_containers
+  gather_facts: no
+
+  roles:
+    - lxd
+    - base-setup
