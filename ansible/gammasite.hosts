@@ -1,5 +1,4 @@
 # Ansible Inventory for Gammasite
-
 [all:vars]
 # User Creation for new containers
 admin_user_name=garvin
@@ -17,17 +16,17 @@ email=support@garvbox.net
 
 # LXD Containers
 [lxd_containers]
-docker-test
-testbuild
 
 [lxd_containers:vars]
 # Ansible Connection plugin set for Any LXD Containers
 ansible_connection=lxd
 
-
 # Docker Hosts
 [docker_hosts]
-docker-test
 
 [docker_hosts:vars]
 lxd_docker_host=true
+
+[unifi_controllers]
+# Pi3 Unifi Controller
+watcher
