@@ -1,32 +1,10 @@
 # Build a New Container and configure as a standardised host (or apply install process to existing)
-# NOTE: requires lxc command and remote configured to the target LXC server
-
-# Support for container deletion is available using "-e lxd_operation=delete", or
-# using host vars
+# NOTE: this must be run from the LXD server only, remote setups are not working
 
 - name: Build & Configure LXD Container
   hosts: lxd_containers
   gather_facts: no
 
-  tasks:
-    - name: LXD Container Build
-      ansible.builtin.import_role:
-        name: lxd
-        tasks_from: create
-      tags: build
-
-    # Post-Build Configuration and software Installation
-    - name: Post-Build discovery
-      ansible.builtin.setup:
-      tags: setup,docker
-
-    - name: Configure Base OS
-      ansible.builtin.import_role:
-        name: base-setup
-      tags: setup
-
-    - name: Install Docker
-      ansible.builtin.import_role:
-        name: docker-host
-      when: lxd_docker_host
-      tags: setup,docker
+  roles:
+    - lxd
+    - base-setup

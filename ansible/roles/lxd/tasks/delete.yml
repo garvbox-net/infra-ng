@@ -1,7 +1,7 @@
 
-# Block used for delegation - all this will run on the LXD host
+# Block used for delegation - all this will run using
 - name: Stop and Delete Container '{{ inventory_hostname }}'
-  delegate_to: "{{lxd_server}}"
+  delegate_to: localhost 
   block:
     - name: Check for existing Container
       ansible.builtin.command: "lxc info {{inventory_hostname}}"
