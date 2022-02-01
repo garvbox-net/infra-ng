@@ -11,10 +11,8 @@ Infrastructure Docs, Code, Config, Playbooks
 * testable deployments
 * containerised applications (docker/swarm/k8s)
 * Automated proxying with SSL (traefik/haproxy)
-
-Optional/Nice-To-Have:
+* Easy standardised way to add services without requiring admin privileges over base infra (e.g. gitlab subgroups)
 * Automatic DNS updates, handling each of the different sites
-* Integration of public DNS for automatic routing
 
 ### Example List of services by site:
 The below list shows the various web facing services on each site.
@@ -25,12 +23,11 @@ alphasite:
   - plex
   - owncloud
   - gitea
-  - web apps (Cathal)
 deltasite:
   - Dogwatch (Zoneminder)
 gammasite:
   - HomeAssistant
-omegasite (future):
+omegasite:  # Future site to be built :)
   - HomeAssistant
   - NextCloud
 ```
@@ -38,12 +35,12 @@ omegasite (future):
 
 ## DNS
 
-`garvbox.net` domain currently using NameCheap DNS
-Up for renewal pretty soon - looking at alternatives.
-Noted that Namecheap has a limit of 150 records in a domain, should be enough for hosting a lot of services  
-**DECISION:** Move to CloudFlare DNS as it has better support for LetsEncrypt automated renewal using DNS-01 challenge - allowing wildcards
+`garvbox.net` domain currently using NameCheap DNS. This is up for renewal pretty soon - looking at alternatives.  
+**Update** - Feb 2022 - Moved to CloudFlare DNS along with dynamic IP updaters across three sites, working OK. CF has better support for LetsEncrypt automated renewal using DNS-01 challenge - allowing wildcards  
 
-CNAME Records offer a simple way of redirecting a bunch of services to one name. eg. could have `homeassistant.deltasite.garvbox.net` redirecting to `deltasite.garvbox.net` for easy public access and allowing traefik to route appropriately by name. 
+### Application Subdomains
+Public subdomains offer offer a simple way of managing multiple services per site. eg. could have `homeassistant.deltasite.garvbox.net` redirecting to `deltasite.garvbox.net` for easy public access and allowing traefik to route appropriately by name.  
+This would require some integration with whatever deployment management solution (standalone script or hook) to add CNAME records on deployment as mentioned in requirements above.
 
 Example DNS Record:
 ```
