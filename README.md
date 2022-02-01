@@ -3,5 +3,5 @@
 Infrastructure Docs, Code, Config, Playbooks
 
 Further Docs:
-* [Infrastructure Design](INFRA.md)
-* [Deltasite](site-docs/deltasite.md) - Video Cameras and Raspberry Pi setup
+* [Infrastructure Design](docs/infra-design.md)
+* [Deltasite](docs/deltasite.md) - Video Cameras and Raspberry Pi setup
