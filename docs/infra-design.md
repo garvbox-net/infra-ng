@@ -2,9 +2,8 @@
 
 Infrastructure Docs, Code, Config, Playbooks
 
-## Solution Design
 
-### Requirements
+## Requirements
 
 * Ability to handle multiple sites (eg alphasite, delta, gamma etc)
 * handle multiple nodes within the site
@@ -32,8 +31,40 @@ omegasite:  # Future site to be built :)
   - NextCloud
 ```
 
+## App Hosting
 
-## DNS
+### Docker Servers
+Docker is used for all apps for ease of deployment and management. Standardised Docker Installation and Configuration across server nodes, using an ansible [playbook](../ansible/docker-install.yml). They just need to be in the group docker-host for your inventory file.
+
+If manual install/config is required, the source is here;
+* Docker CE installed as per [Ubuntu Docker Install](https://docs.docker.com/engine/install/ubuntu/)
+* Docker Compose V2 - [Docker Compose CLI Install](https://docs.docker.com/compose/cli-command/#install-on-linux). Note the links there assume architecture is x86_64 - this would need to be changed on rpi.
+
+
+### Container Management
+
+**OLD/Current** Manual Container management approach - used in deltasite for zoneminder and Unifi
+* Directory in user home: `~/docker-compose` - containing directory for each service to be hosted, with docker-compose yaml files in each, and any Dockerfiles if there are locally-built containers
+* manual deployment with docker compose
+* no backups or version control
+* isolated and requires manual interaction
+* no status reporting, monitoring or auto recovery
+
+
+Management & Monitoring Tools To explore:
+* cAdvisor + Prometheus exporter -> Grafana
+* watchtower - image updates
+
+
+### Auto-Deployed Containers
+
+**TODO**: Design, Test and document GitOps multi-site Solution :)
+
+Notes/Ideas:
+* Deployment targeting using project environment in gitlab - smart deployment hooks on each target node
+
+
+### DNS
 
 `garvbox.net` domain currently using NameCheap DNS. This is up for renewal pretty soon - looking at alternatives.  
 **Update** - Feb 2022 - Moved to CloudFlare DNS along with dynamic IP updaters across three sites, working OK. CF has better support for LetsEncrypt automated renewal using DNS-01 challenge - allowing wildcards  
