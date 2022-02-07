@@ -23,9 +23,7 @@ ansible_connection=lxd
 
 # Docker Hosts
 [docker_hosts]
-
-[docker_hosts:vars]
-lxd_docker_host=true
+servapi4
 
 [unifi_controllers]
 # Pi3 Unifi Controller

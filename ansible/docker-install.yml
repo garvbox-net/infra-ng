@@ -1,7 +1,7 @@
 # Dokcer server installs
 
 - name: Docker Server Install
-  hosts: localhost
+  hosts: docker_hosts
   become: true
 
   roles:

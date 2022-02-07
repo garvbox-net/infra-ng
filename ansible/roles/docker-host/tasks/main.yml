@@ -8,7 +8,8 @@
   ansible.builtin.import_role:
     name: lxd
     tasks_from: docker-policy
-
+  when: lxd_docker_host | default(false)
+  
 - name: Get dpkg Architecture
   ansible.builtin.command:
     cmd: dpkg --print-architecture
