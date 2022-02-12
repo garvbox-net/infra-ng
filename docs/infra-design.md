@@ -1,10 +1,5 @@
-# infra-ng - IaC Solution
-
-Infrastructure Docs, Code, Config, Playbooks
-
-
-## Requirements
-
+# infra-ng: Infrastructure Design
+This document describes the design of a self-hosted server app platform with following desirable attributes:
 * Ability to handle multiple sites (eg alphasite, delta, gamma etc)
 * handle multiple nodes within the site
 * testable deployments
@@ -13,75 +8,142 @@ Infrastructure Docs, Code, Config, Playbooks
 * Easy standardised way to add services without requiring admin privileges over base infra (e.g. gitlab subgroups)
 * Automatic DNS updates, handling each of the different sites
 
-### Example List of services by site:
-The below list shows the various web facing services on each site.
-```yaml
-alphasite:
-  - sonarr
-  - radarr
-  - plex
-  - owncloud
-  - gitea
-deltasite:
-  - Dogwatch (Zoneminder)
-gammasite:
-  - HomeAssistant
-omegasite:  # Future site to be built :)
-  - HomeAssistant
-  - NextCloud
-```
 
-## App Hosting
+## Background: Legacy Infrastructure & Aapps
+This section briefly covers the legacy infra and the issues with the same. The legacy infra has
+two styles, `lxd` setup for full system containers, and `docker` setup for apps.
 
-### Docker Servers
-Docker is used for all apps for ease of deployment and management. Standardised Docker Installation and Configuration across server nodes, using an ansible [playbook](../ansible/docker-install.yml). They just need to be in the group docker-host for your inventory file.
+### Legacy LXD
+LXD is the older of the two approaches and has been in production for a very long time. It has been
+stable and has some nice benefits like flexibility, total app independence, and having a dedicated
+IP address for any services but there is a lot of management overhead.
 
-If manual install/config is required, the source is here;
-* Docker CE installed as per [Ubuntu Docker Install](https://docs.docker.com/engine/install/ubuntu/)
-* Docker Compose V2 - [Docker Compose CLI Install](https://docs.docker.com/compose/cli-command/#install-on-linux). Note the links there assume architecture is x86_64 - this would need to be changed on rpi.
+**Issues:**
+* no automated build capability
+* poor repeatability, no backups
+* no standardisation across services
+* minimal automation of proxy (limited ansible usage)
+* lots of sysadmin and manual interaction
+* no status reporting, monitoring or auto recovery
 
 
-### Container Management
-
-**OLD/Current** Manual Container management approach - used in deltasite for zoneminder and Unifi
-* Directory in user home: `~/docker-compose` - containing directory for each service to be hosted, with docker-compose yaml files in each, and any Dockerfiles if there are locally-built containers
+### Legacy Docker Compose
+Manual Docker Container management approach - used in deltasite for zoneminder and Unifi
+* Directory in user home: `~/docker-compose` - containing directory for each service to be hosted,
+  with docker-compose yaml files in each, and any Dockerfiles if there are locally-built containers
 * manual deployment with docker compose
+
+**Issues:** 
 * no backups or version control
+* no standardisation across containers
+* no common approach to load balancing
 * isolated and requires manual interaction
 * no status reporting, monitoring or auto recovery
 
 
-Management & Monitoring Tools To explore:
+## Solution: Standardised Docker Infra & Apps
+Docker (and compose) is chosen as the solution for the following reasons:
+* Simplicity: Kubernetes (k3s) was investigated but the overhead is a bit too much for raspberry
+  pis and its total overkill given the lack of infra reduncancy and limited capacity we have
+* multi-platform: easy to run across a variety of server types and networks
+* flexible: easy to script and automate deployment, huge customisation available with Dockerfiles and automated build from compose
+
+
+## Docker Servers
+Docker used for all apps for ease of deployment and management. Standardised Docker Installation and 
+Configuration across server nodes, using an ansible [playbook](../ansible/docker-install.yml). 
+They just need to be in the group docker-host for your inventory file.
+
+If manual install/config is required, the source is here;
+* Docker CE installed as per [Ubuntu Docker Install](https://docs.docker.com/engine/install/ubuntu/)
+* Docker Compose V2 - [Docker Compose CLI Install](https://docs.docker.com/compose/cli-command/#install-on-linux).
+Note the links there assume architecture is x86_64 - this would need to be changed on rpi.
+
+## Configuration file Structure
+Configuration Structure hosted within this project for infra components and core apps on each site.  
+Structure as follows:
+
+```
+infra-ng
++-- deploy
+|   +-- <site-name>
+|   |   +-- infra
+|   |   |   +-- docker-compose.yml
+|   |   |   +-- traefik
+|   |   |   |   +-- acme.json
+|   |   |   |   +-- traefik.yaml
+|   |   +-- <app>
+|   |   |   +-- docker-compose.yml
+|   |   |   +-- <supporting-app-content>
+|   |   |   |   +-- <app-files>
+```
+
+Additional Notes:
+* `<site-name>`: Name of the site e.g. gammasite. Top-level directory for the site.
+* `infra`: It is expected that each site should have an infra section for site-specific traefik
+  and management services.
+* `<app>`: Application directory per app group containing a docker-compose file for the services
+* `<supporting-app-content>` - supporting files for the apps contained e.g. Dockerfiles, scripts, config files
+
+Future Enhancements:
+* Config for managed applications stored in a gitlab group structure allowing group members to add
+  and deploy apps very easily
+* allow for multi-node sites (likely using swarm)
+
+
+## Standardised Infra Containers
+As seen in the above structure there is a standardised `infra` compose project for each site. 
+This is for sitewide infrastructure services, managing deployments etc. Keeping this seperate from
+user facing applications should be a fairly manageable config and allow smoother transition to
+fully automated deployments in future.
+
+Future enhancements may improve standardisation by templating this between the sites and only storing
+site-specific customisations in each site directory.
+
+**TODO:** Management & Monitoring Tools To explore:
 * cAdvisor + Prometheus exporter -> Grafana
-* watchtower - image updates
+
+### Traefik
+Traefik was chosen as the load balancer/proxy for its nice integration with docker and automated
+certificate management. The Traefik compose file contains a `web` network which must be connected
+to other containers if they need to be exposed to the web.
+
+Application web access, https and other details can be seen [below](#traefik-web-access)
+
+### Watchtower
+App updates are provided with [watchtower](https://containrrr.dev/watchtower/). This is disabled by
+default for safety, and can be enabled and configured as shown [below](#watchtower-automatic-updates)
 
 
-### Auto-Deployed Containers
+## App Containers
+**TODO**: Design, Test and document GitOps multi-site Solution.  
+Interim solution is manual management of containers using docker-compose from this repo.
 
-**TODO**: Design, Test and document GitOps multi-site Solution :)
+### Traefik: Web access
+**TODO:** Add instructions and examples for traefik plumbing to apps
 
-Notes/Ideas:
-* Deployment targeting using project environment in gitlab - smart deployment hooks on each target node
+### Watchtower: Automatic Updates
+**TODO:** Add instructions and examples enabling watchtower
 
 
-### DNS
+## Secrets Management
 
-`garvbox.net` domain currently using NameCheap DNS. This is up for renewal pretty soon - looking at alternatives.  
-**Update** - Feb 2022 - Moved to CloudFlare DNS along with dynamic IP updaters across three sites, working OK. CF has better support for LetsEncrypt automated renewal using DNS-01 challenge - allowing wildcards  
+**TODO:** Development of secrets management solutions across apps and infra components
 
-### Application Subdomains
-Public subdomains offer offer a simple way of managing multiple services per site. eg. could have `homeassistant.deltasite.garvbox.net` redirecting to `deltasite.garvbox.net` for easy public access and allowing traefik to route appropriately by name.  
-This would require some integration with whatever deployment management solution (standalone script or hook) to add CNAME records on deployment as mentioned in requirements above.
 
-Example DNS Record:
-```
-garvin@G15:~$ nslookup hass-test.deltasite.garvbox.net 8.8.8.8
-Server:         8.8.8.8
-Address:        8.8.8.8#53
+## DNS & Subdomains
 
-Non-authoritative answer:
-hass-test.deltasite.garvbox.net canonical name = deltasite.garvbox.net.
-Name:   deltasite.garvbox.net
-Address: 109.76.118.164
-```
+### DNS Infrastructure
 
+**Update** - Feb 2022 - `garvbox.net` domain Moved to CloudFlare DNS along with dynamic IP updaters
+across three sites, working OK. CF has better support for LetsEncrypt automated renewal using
+DNS-01 challenge - allowing wildcards  
+
+**TODO:** Document plans for DNS auto-updates and maintenance
+
+### Application Sub-Domains
+Public subdomains offer offer a simple way of managing multiple services per site. 
+eg. could have `homeassistant.deltasite.garvbox.net` redirecting to `deltasite.garvbox.net` for
+easy public access and allowing traefik to route appropriately by name.  
+This would require some integration with whatever deployment management solution
+(standalone script or hook) to add CNAME records on deployment as mentioned in requirements above.
