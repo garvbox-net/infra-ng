@@ -1,0 +1,4 @@
+# Do not commit SSL cert info
+*.crt
+*.key
+*.pem

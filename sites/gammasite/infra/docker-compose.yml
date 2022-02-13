@@ -1,0 +1,31 @@
+version: '3'
+services:
+  traefik:
+    image: traefik:v2.6
+    container_name: traefik
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    networks:
+      - web
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/traefik.yml:ro
+      - ./traefik/ssl:/ssl:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`servapi4.gammasite.lan`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=dashboard"
+      - "traefik.http.routers.dashboard.middlewares=dashwl"
+      - "traefik.http.middlewares.dashwl.ipwhitelist.sourcerange=192.168.0.0/16"
+
+  # watchtower:
+  #   container_name: watchtower
+
+networks:
+  web:
+    external: true

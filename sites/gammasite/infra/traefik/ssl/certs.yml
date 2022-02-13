@@ -1,0 +1,8 @@
+# TEMP Solution for SSL
+---
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /ssl/gammasite.garvbox.net.crt
+        keyFile: /ssl/gammasite.garvbox.net.key

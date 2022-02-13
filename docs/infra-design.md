@@ -105,8 +105,12 @@ site-specific customisations in each site directory.
 
 ### Traefik
 Traefik was chosen as the load balancer/proxy for its nice integration with docker and automated
-certificate management. The Traefik compose file contains a `web` network which must be connected
-to other containers if they need to be exposed to the web.
+certificate management. 
+
+**NOTE:** You must manually create the `web` network before bringing Traefik or anything online,
+it is treated as external on all containers to prevent cross-app dependencies.
+
+    # docker network create web
 
 Application web access, https and other details can be seen [below](#traefik-web-access)
 
@@ -125,6 +129,9 @@ Interim solution is manual management of containers using docker-compose from th
 ### Watchtower: Automatic Updates
 **TODO:** Add instructions and examples enabling watchtower
 
+
+## Testing
+**TODO:** Develop and document deployment testing approaches
 
 ## Secrets Management
 
