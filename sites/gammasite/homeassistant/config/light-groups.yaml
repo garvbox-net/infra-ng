@@ -1,0 +1,8 @@
+
+
+# Living Room lights
+# - platform: group
+#   name: Salt Lamps
+#   entities:
+#     - switch.tasplug4
+#     - switch.tasmota_c4dd57053ff9_switch_relay_0

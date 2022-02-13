@@ -1,0 +1,9 @@
+
+
+tvlights:
+  name: TV Lights
+  entities:
+    - switch.tasplug4
+    - switch.tasplug3
+    - switch.tasplug1
+

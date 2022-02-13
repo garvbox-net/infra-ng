@@ -1,0 +1,39 @@
+# Homeassistant Compose File
+# Official source here with some modifications: https://www.home-assistant.io/installation/linux#docker-compose
+---
+version: '3'
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    ports:
+      - 8123
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homeassistant.rule=Host(`gammasite.garvbox.net`)"
+      - "traefik.http.routers.homeassistant.entrypoints=web-https"
+      - "traefik.http.routers.homeassistant.tls=true"
+
+    networks:
+      - web
+      - ha-internal
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:2.0
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - 1883:1883
+      - 9001:9001
+    networks:
+      - ha-internal
+
+networks:
+  web:
+    external: true
+  ha-internal:
