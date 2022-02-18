@@ -9,7 +9,7 @@ services:
     volumes:
       - ./config:/config
       - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
+    restart: always
     ports:
       - 8123
     labels:
@@ -25,6 +25,7 @@ services:
   mosquitto:
     container_name: mosquitto
     image: eclipse-mosquitto:2.0
+    restart: always
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     ports:
