@@ -13,8 +13,20 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/traefik.yml:/traefik.yml:ro
       - ./traefik/ssl:/ssl:ro
+    environment:
+      # - TRAEFIK_ENTRYPOINTS_http=true
+      - TRAEFIK_ENTRYPOINTS_web-http_ADDRESS=:80
+      - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_TO=web-https
+      - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME=https
+      # - TRAEFIK_ENTRYPOINTS_https=true
+      - TRAEFIK_ENTRYPOINTS_web-https_ADDRESS=:443
+      - TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS=:8080
+      - TRAEFIK_PROVIDERS_DOCKER=true
+      - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+      - TRAEFIK_PROVIDERS_DOCKER_NETWORK=web
+      - TRAEFIK_PROVIDERS_FILE_FILENAME=/ssl/certs.yml
+      - TRAEFIK_API=true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=Host(`servapi4.gammasite.lan`)"
