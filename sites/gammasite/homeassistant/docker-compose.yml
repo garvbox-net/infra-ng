@@ -18,7 +18,6 @@ services:
       - "traefik.http.routers.homeassistant.entrypoints=web-https"
       - "traefik.http.routers.homeassistant.tls=true"
       - "com.centurylinklabs.watchtower.enable=true"
-
     networks:
       - web
       - ha-internal

@@ -48,7 +48,8 @@ services:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_LABEL_ENABLE=true
       # - WATCHTOWER_MONITOR_ONLY=true
-      # - WATCHTOWER_POLL_INTERVAL=60
+      - WATCHTOWER_POLL_INTERVAL=60
+      - WATCHTOWER_SCHEDULE=0 0 6 * * *
     env_file:
       # Environment file typically used to add notifications environment vars
       # without committing to repo. Env vars docs: https://containrrr.dev/watchtower/arguments/
