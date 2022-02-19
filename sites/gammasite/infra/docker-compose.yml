@@ -34,9 +34,27 @@ services:
       - "traefik.http.routers.dashboard.entrypoints=dashboard"
       - "traefik.http.routers.dashboard.middlewares=dashwl"
       - "traefik.http.middlewares.dashwl.ipwhitelist.sourcerange=192.168.0.0/16"
+      - "com.centurylinklabs.watchtower.enable=true"
 
-  # watchtower:
-  #   container_name: watchtower
+
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower:armhf-latest
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      # - WATCHTOWER_MONITOR_ONLY=true
+      # - WATCHTOWER_POLL_INTERVAL=60
+    env_file:
+      # Environment file typically used to add notifications environment vars
+      # without committing to repo. Env vars docs: https://containrrr.dev/watchtower/arguments/
+      - watchtower/notifications.env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
 networks:
   web:

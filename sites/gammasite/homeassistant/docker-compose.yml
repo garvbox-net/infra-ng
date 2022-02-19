@@ -17,6 +17,7 @@ services:
       - "traefik.http.routers.homeassistant.rule=Host(`gammasite.garvbox.net`)"
       - "traefik.http.routers.homeassistant.entrypoints=web-https"
       - "traefik.http.routers.homeassistant.tls=true"
+      - "com.centurylinklabs.watchtower.enable=true"
 
     networks:
       - web
@@ -33,6 +34,8 @@ services:
       - 9001:9001
     networks:
       - ha-internal
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
 networks:
   web:
