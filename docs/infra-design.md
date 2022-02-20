@@ -8,45 +8,20 @@ This document describes the design of a self-hosted server app platform with fol
 * Easy standardised way to add services without requiring admin privileges over base infra (e.g. gitlab subgroups)
 * Automatic DNS updates, handling each of the different sites
 
-
-## Background: Legacy Infrastructure & Aapps
-This section briefly covers the legacy infra and the issues with the same. The legacy infra has
-two styles, `lxd` setup for full system containers, and `docker` setup for apps.
-
-### Legacy LXD
-LXD is the older of the two approaches and has been in production for a very long time. It has been
-stable and has some nice benefits like flexibility, total app independence, and having a dedicated
-IP address for any services but there is a lot of management overhead.
-
-**Issues:**
-* no automated build capability
-* poor repeatability, no backups
-* no standardisation across services
-* minimal automation of proxy (limited ansible usage)
-* lots of sysadmin and manual interaction
-* no status reporting, monitoring or auto recovery
+This design attempts to mitigate legacy infra issues outlined in [legacy](legacy.md)
 
 
-### Legacy Docker Compose
-Manual Docker Container management approach - used in deltasite for zoneminder and Unifi
-* Directory in user home: `~/docker-compose` - containing directory for each service to be hosted,
-  with docker-compose yaml files in each, and any Dockerfiles if there are locally-built containers
-* manual deployment with docker compose
-
-**Issues:** 
-* no backups or version control
-* no standardisation across containers
-* no common approach to load balancing
-* isolated and requires manual interaction
-* no status reporting, monitoring or auto recovery
-
-
-## Solution: Standardised Docker Infra & Apps
+## Overview: Standardised Docker Infra & Apps
 Docker (and compose) is chosen as the solution for the following reasons:
 * Simplicity: Kubernetes (k3s) was investigated but the overhead is a bit too much for raspberry
   pis and its total overkill given the lack of infra reduncancy and limited capacity we have
 * multi-platform: easy to run across a variety of server types and networks
 * flexible: easy to script and automate deployment, huge customisation available with Dockerfiles and automated build from compose
+
+### Remaining Issues
+Some minor issues outstanding with this design to be resolved in the next iteration:
+* Theres still a lot of site-specific repetition in the layout, eg per-site traefik config
+* One-step IaC deployment non trivial, recreating a site to test a change would be challenging
 
 
 ## Docker Servers
