@@ -1,0 +1,2 @@
+# Keep secret environment vars out of git
+cloudflare.env
