@@ -43,7 +43,7 @@ services:
       - ./traefik/cloudflare.env
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`servapi4.gammasite.lan`)"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.gammasite.garvbox.net`)"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.entrypoints=dashboard"
       - "traefik.http.routers.dashboard.middlewares=dashwl"
