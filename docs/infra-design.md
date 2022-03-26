@@ -131,9 +131,11 @@ This would require some integration with whatever deployment management solution
 (standalone script or hook) to add CNAME records on deployment as mentioned in requirements above.
 
 
-# Portainer Edge Nodes
+# K3S core and Portainer Edge Nodes
 
 TODO: Explore Portainer Edge Nodes idea
 Use kube cluster on kraken (and others) as the main hub with portainer running on it as a controller for the raspberry pis
 using the edge node setups they could have handy central control...
+
+See documentation on kubernetes exploration: [kube-k3s.md](./kube-k3s.md)
 
