@@ -129,3 +129,11 @@ eg. could have `homeassistant.deltasite.garvbox.net` redirecting to `deltasite.g
 easy public access and allowing traefik to route appropriately by name.  
 This would require some integration with whatever deployment management solution
 (standalone script or hook) to add CNAME records on deployment as mentioned in requirements above.
+
+
+# Portainer Edge Nodes
+
+TODO: Explore Portainer Edge Nodes idea
+Use kube cluster on kraken (and others) as the main hub with portainer running on it as a controller for the raspberry pis
+using the edge node setups they could have handy central control...
+
