@@ -17,16 +17,31 @@ Kube could also make testing much more powerful but theres a lot of challenges t
 * https://github.com/billimek/k8s-gitops
 
 
-## Test Environments:
+# Current Clusters
+The Test clusters are configured with Flux as documented [below](#gitops-with-flux)
 
-Could spin up K3D on one of the pi4 installs for a test environment. This would actually be a 
-decent option for dynamic cluster spinup and test of config changes using gitops. Lots of other
-challenges to solve there, would need to spin up test networks etc to get a true sense of the
-environments.
+List of clusters for reference:
+* k3d-test - K3D Single node Test Cluster running on Raspberry Pi 4 (servapi4)
+* k3s-lxc-test - K3S single node test cluster running on an LXD container (k3s-test) on kraken
 
-Testing on LXD is viable with some shenanigans to get it work as below.
+**Note**: Custom Data path on Kraken test environment  
+As kraken is mostly zfs, created an LVM volume and a filesystem on it for use with k3s. Container config:
+`$ lxc config device add k3s-test lvm-k3s disk source=/dev/mapper/kraken--vg-k3s path=/data`
+To make use of the path at /data, the k3s config file is updated:
+```yaml
+disable: servicelb
+data-dir: /data/k3s
+```
 
-### How to Install K3S on LXD
+
+# Test Environment setup
+
+The easiest way to test is with K3D as its a one-liner to get up and running. Testing on LXD is viable
+also with some shenanigans to get it work as below.
+Using LXD is powerful as you can replicate a bare-metal install network fairly closely and play with things
+like MetalLB load balancer in a somewhat realistic setup. Below Sections show how to Install and Configure each.
+
+## How to Install K3S on LXD
 
 * Create LXD container to use as k3s host (ubuntu image works well)
 * Ensure IP forwarding enabled on the host machine (since they share the kernel)
@@ -139,25 +154,28 @@ To set it up using Helm (see [ref](https://metallb.universe.tf/installation/)):
   helm install metallb metallb/metallb -f <path-to-values.yaml> --create-namespace --namespace=metallb-system
   ```
 
-# Secrets Management
+## Secrets Management
 
 The Flux Guide on SOPS is very good and covers everything needed https://fluxcd.io/docs/guides/mozilla-sops/.  
-See the [age](https://fluxcd.io/docs/guides/mozilla-sops/#encrypting-secrets-using-age) guide for use of age instead of gpg - much easier. 
+See the [age](https://fluxcd.io/docs/guides/mozilla-sops/#encrypting-secrets-using-age) guide for use of age
+instead of gpg - much easier. 
 
 
-# GitOps: Flux
+# GitOps with Flux
 
-There are lots of great examples here at [k8s-at-home](https://github.com/k8s-at-home/awesome-home-kubernetes) of clusters using flux on k3s/k8s.
-The setup here is inspired by many of those. Note that the GitOps repository is kept seperate from the local infra repo to keep
-the activity there limited to pure gitops/automation only.
+There are lots of great examples here at [k8s-at-home](https://github.com/k8s-at-home/awesome-home-kubernetes)
+of clusters using flux on k3s/k8s. The setup here is inspired by many of those. Note that the GitOps repository
+is kept seperate from the local infra repo to keep the activity there limited to pure gitops/automation only.
 
 TODO: Update [infra-design.md](./infra-design.md) with design ref for clusters.
 
 
 ## Install and Configure Flux
 Official Instructions at https://fluxcd.io/docs/installation/. Docs here are specific to our setup on gitlab.com.
-Note: Bootstrapping relies on working kubectl config for your cluster and existing git repo for gitops. Note the path option is important if you wish to share multiple clusters in the same repo.
-You need a gitlab personal access token with complete read/write access to gitlab API as it will create deploy keys for the repo.  
+Note: Bootstrapping relies on working kubectl config for your cluster and existing git repo for gitops. Note the
+path option is important if you wish to share multiple clusters in the same repo.
+You need a gitlab personal access token with complete read/write access to gitlab API as it will create deploy
+keys for the repo.  
 Bootstrapping from an existing repository/cluster location will apply the manifests of that repo to your cluster, handy for backup and restore.
 
 * Install Flux CLI: `curl -s https://fluxcd.io/install.sh | sudo bash`
@@ -179,11 +197,12 @@ Example Bootstrap Command:
 
 ## Repo Structure
 
-The GitOps repo is structured to handle multiple clusters by name, each one is handled seperately using the path when flux is bootstrapped as above.
-The yaml files are organised by namespace underneath, using kustomization.yaml in a lot of places for easy enable/disable of directories without
-removing files. Generally speaking the consumable applications (like homeassistant, sonarr etc) are placed in the `default` namespace.
-Helm repositories for flux visibility are added under `flux-system-repos` but are still in `flux-system` namespace, this is just to
-avoid cluttering up the flux system directory created on bootstrap.
+The GitOps repo is structured to handle multiple clusters by name, each one is handled seperately using the path
+when flux is bootstrapped as above. The yaml files are organised by namespace underneath, using
+`kustomization.yaml` in a lot of places for easy enable/disable of directories without removing files.
+Generally speaking the consumable applications (like homeassistant, sonarr etc) are placed in the `default` namespace.
+Helm repositories for flux visibility are added under `flux-system-repos` but are still in `flux-system`
+namespace, this is just to avoid cluttering up the flux system directory created on bootstrap.
 
 ```
 cluster_1
