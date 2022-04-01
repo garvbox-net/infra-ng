@@ -12,7 +12,7 @@ out from the main site to the others has routing issues.
 easily connect to resources in the other without needing VPN software on the clients.
 
 Notes on the setup:
-* `Alphasite` is the "core" site here, running the OpenWRT server
+* `Alphasite` is the "core" site here, running the OpenVPN server
   * Router: `packetron` - running PFsense
   * Domain: `glenside.lan`
 * `Gammasite` is an "edge" site
