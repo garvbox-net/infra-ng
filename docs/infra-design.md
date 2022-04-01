@@ -10,108 +10,25 @@ This document describes the design of a self-hosted server app platform with fol
 
 This design attempts to mitigate legacy infra issues outlined in [legacy](legacy.md)
 
+## Design rework - Kubernetes core
 
-## Overview: Standardised Docker Infra & Apps
-Docker (and compose) is chosen as the solution for the following reasons:
-* Simplicity: Kubernetes (k3s) was investigated but the overhead is a bit too much for raspberry
-  pis and its total overkill given the lack of infra reduncancy and limited capacity we have
-* multi-platform: easy to run across a variety of server types and networks
-* flexible: easy to script and automate deployment, huge customisation available with Dockerfiles and automated build from compose
+The previous docker-based setup (documented [here](./docker-compose.md)) is under review,
+it works nicely for the rasperry pi's in gammasite and deltasite but doesnt meet some of the needs
+like version control with gitops, testable deployments and rollbacks, at least
+not without some very heavy automation on top of it.
 
-### Remaining Issues
-Some minor issues outstanding with this design to be resolved in the next iteration:
-* Theres still a lot of site-specific repetition in the layout, eg per-site traefik config
-* One-step IaC deployment non trivial, recreating a site to test a change would be challenging
+If going to that level of effort it is looking far more preferable (and more valuable experience)
+to just go in on kubernetes, if not on the edge at least at the core and use that to control the edge nodes.
+The edge sites will stay on docker compose 
 
+See documentation on kubernetes exploration, setup guides etc: [Kubernetes on K3S](./kube-k3s.md)
 
-## Docker Servers
-Docker used for all apps for ease of deployment and management. Standardised Docker Installation and 
-Configuration across server nodes, using an ansible [playbook](../ansible/docker-install.yml). 
-They just need to be in the group docker-host for your inventory file.
-
-If manual install/config is required, the source is here;
-* Docker CE installed as per [Ubuntu Docker Install](https://docs.docker.com/engine/install/ubuntu/)
-* Docker Compose V2 - [Docker Compose CLI Install](https://docs.docker.com/compose/cli-command/#install-on-linux).
-Note the links there assume architecture is x86_64 - this would need to be changed on rpi.
-
-## Configuration file Structure
-Configuration Structure hosted within this project for infra components and core apps on each site.  
-Structure as follows:
-
-```
-infra-ng
-+-- deploy
-|   +-- <site-name>
-|   |   +-- infra
-|   |   |   +-- docker-compose.yml
-|   |   |   +-- traefik
-|   |   |   |   +-- acme.json
-|   |   |   |   +-- traefik.yaml
-|   |   +-- <app>
-|   |   |   +-- docker-compose.yml
-|   |   |   +-- <supporting-app-content>
-|   |   |   |   +-- <app-files>
-```
-
-Additional Notes:
-* `<site-name>`: Name of the site e.g. gammasite. Top-level directory for the site.
-* `infra`: It is expected that each site should have an infra section for site-specific traefik
-  and management services.
-* `<app>`: Application directory per app group containing a docker-compose file for the services
-* `<supporting-app-content>` - supporting files for the apps contained e.g. Dockerfiles, scripts, config files
-
-Future Enhancements:
-* Config for managed applications stored in a gitlab group structure allowing group members to add
-  and deploy apps very easily
-* allow for multi-node sites (likely using swarm)
-
-
-## Standardised Infra Containers
-As seen in the above structure there is a standardised `infra` compose project for each site. 
-This is for sitewide infrastructure services, managing deployments etc. Keeping this seperate from
-user facing applications should be a fairly manageable config and allow smoother transition to
-fully automated deployments in future.
-
-Future enhancements may improve standardisation by templating this between the sites and only storing
-site-specific customisations in each site directory.
-
-**TODO:** Management & Monitoring Tools To explore:
-* cAdvisor + Prometheus exporter -> Grafana
-
-### Traefik
-Traefik was chosen as the load balancer/proxy for its nice integration with docker and automated
-certificate management. 
-
-**NOTE:** You must manually create the `web` network before bringing Traefik or anything online,
-it is treated as external on all containers to prevent cross-app dependencies.
-
-    # docker network create web
-
-Application web access, https and other details can be seen [below](#traefik-web-access)
-
-### Watchtower
-App updates are provided with [watchtower](https://containrrr.dev/watchtower/). This is disabled by
-default for safety, and can be enabled and configured as shown [below](#watchtower-automatic-updates)
-
-
-## App Containers
-**TODO**: Design, Test and document GitOps multi-site Solution.  
-Interim solution is manual management of containers using docker-compose from this repo.
-
-### Traefik: Web access
-**TODO:** Add instructions and examples for traefik plumbing to apps
-
-### Watchtower: Automatic Updates
-**TODO:** Add instructions and examples enabling watchtower
-
-
-## Testing
-**TODO:** Develop and document deployment testing approaches
-
-## Secrets Management
-
-**TODO:** Development of secrets management solutions across apps and infra components
-
+Some Ideas under exploration:
+* Use kube cluster on kraken (and others) as the main hub with portainer running on it as a
+  controller for the raspberry pis using the edge node setups they could have handy central control...
+* Kubernetes edge mode for edge pi's
+* Kube cluster with kraken, ark and a VM on ultron as the controller nodes an
+  * GlusterFS highly available NFS share for main storage and pod backing
 
 ## DNS & Subdomains
 
@@ -129,13 +46,3 @@ eg. could have `homeassistant.deltasite.garvbox.net` redirecting to `deltasite.g
 easy public access and allowing traefik to route appropriately by name.  
 This would require some integration with whatever deployment management solution
 (standalone script or hook) to add CNAME records on deployment as mentioned in requirements above.
-
-
-# K3S core and Portainer Edge Nodes
-
-TODO: Explore Portainer Edge Nodes idea
-Use kube cluster on kraken (and others) as the main hub with portainer running on it as a controller for the raspberry pis
-using the edge node setups they could have handy central control...
-
-See documentation on kubernetes exploration: [kube-k3s.md](./kube-k3s.md)
-
