@@ -20,6 +20,18 @@ Notes on the setup:
   * Domain: `gammasite.lan`
 
 
+```mermaid
+flowchart LR;
+    subgraph alphasite;
+    client --> cm-routey;
+    end;
+    cm-routey --> packetron;
+    subgraph gammasite;
+    packetron --> target;
+    end;
+```
+
+
 Steps to create:
 * Created a user on `packetron` for generation of a client cert. Stored password in keepass `ServerKeys.kdbx` on owncloud.
 * No real configuration on packetron required, from that side its a pretty normal client, just generated
