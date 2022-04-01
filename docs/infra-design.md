@@ -30,6 +30,19 @@ Some Ideas under exploration:
 * Kube cluster with kraken, ark and a VM on ultron as the controller nodes an
   * GlusterFS highly available NFS share for main storage and pod backing
 
+
+# Networking
+Documentation about the internal network config, site to site links and public DNS setups.
+
+## Site to Site Connections
+**Objectives**:
+* Seamless Connections between all managed sites requiring no VPN software on endpoints
+* DNS lookups from any site to any other
+* Firewall monitoring and traffic reporting between sites
+
+See [Network Design](./networking.md#site-to-site-connections) for site connectivity details.
+
+
 ## DNS & Subdomains
 
 ### DNS Infrastructure
