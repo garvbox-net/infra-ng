@@ -1,0 +1,18 @@
+# K3S Hosts file for k3s-lxd-test cluster
+---
+k3s_cluster:
+  children:
+    masters:
+      hosts:
+        k3s-test:
+          ansible_host: k3s-test.glenside.lan
+          k3s_server:
+            disable:
+              - traefik
+              - servicelb
+              - coredns
+              - metrics-server
+            data-dir: /data/k3s
+    workers:
+      hosts:
+        # No worker hosts

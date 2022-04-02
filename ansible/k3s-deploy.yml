@@ -1,0 +1,17 @@
+# K3S Auto Cluster Deplyoment
+---
+
+- name: Install K3S to all Nodes
+  hosts: k3s_cluster
+  vars:
+    # For some reason we have to set this because the role ignores "become" at the play level
+    k3s_become: true
+  pre_tasks:
+    - name: Set each node in masters group to be a control node
+      ansible.builtin.set_fact:
+        k3s_control_node: true
+      when: inventory_hostname in groups["masters"]
+  roles:
+    - role: xanmanning.k3s
+
+# TODO: Add k3s config file copying to local machine
