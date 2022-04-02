@@ -3,9 +3,14 @@ Documentation on network designs and configuration steps.
 
 
 ## Site to Site Connections
-Initial experiment with OpenVPN tunneling was pretty successful (see below) however its client-server design
-leaves some issues. It works well for the sub-site connecting in to main (alphasite) but connecting
-out from the main site to the others has routing issues.
+Initially OpenVPN was set up with the previous client access main VPN on Packetron, but its client-server design
+leaves some issues with routing, so second attempt (below) uses a P2P VPN config.
+
+This configuration is heavily inspired from the netgate docs [here](https://docs.netgate.com/pfsense/en/latest/recipes/openvpn-s2s-psk.html),
+with lots of modifications and experimentation needed to get it working with an OpenWRT client site.
+OpenWRT really doesnt provide any help for the VPN setup, you need to know all the options to
+make it work properly. Briefly looked at IPsec tunnel but that is really hardcore with OpenWRT so
+left it off for now. May revisit.
 
 ### OpenVPN Tunnel Experimental Setup
 **Objective**: connect two sites via a seamless tunnel so that machines in one can
@@ -33,30 +38,54 @@ flowchart LR;
 
 
 Steps to create:
-* Created a user on `packetron` for generation of a client cert. Stored password in keepass `ServerKeys.kdbx` on owncloud.
-* No real configuration on packetron required, from that side its a pretty normal client, just generated
-  the usual client config from packetron UI.
-* Imported client config to `cm-routey`, some changes needed:
-  * under the "client" section, added the below lines. This is to disable pushing routes to the client router as
-    that would force all traffic from the client network through alphasite, which is not what we want.
-    ```
-    route 10.0.0.0 255.0.0.0 10.1.1.1
-    route-nopull
-    ```
-  * Updated auth line: `auth-user-pass /etc/openvpn/PacketronVPN.auth`
-  * Added user and password to the provided auth file from UI, user and pass on seperate lines
-  * Started the VPN in openWRT and checked it came online. At this point could ping packetron from the 
-    router but not from clients on the network.
-  * This was useful on the openwrt router to check logs and debug issues with VPN: `# logread -e openvpn -f`
+* Created certificates on `packetron` as per document:
+  * Server Cert: `P2P VPN Server Cert`
+  * Client Cert: `Gammasite P2P VPN`
+  * Downloaded Root CA Cert, CLient Cert and Key temporarily, uploaded to `cm-routey` (filenames below in config)
+* Added VPN Server Config to `packetron` as advised by the docs
+  * Port 1195 as 1194 was already in use
+  * Server certificate uses cert created above
+  * IPv4 Tunnel network: `10.1.2.0/24` - since the first VPN is using `10.1.1.0/24`,
+    and we only need one IP address per site
+  * IPv4 Local Network: `10.0.0.0/16` - allows access to the full LAN in alphasite (may restrict to server range in future)
+  * IPv4 Remote Network: `192.168.0.0/24` - creates a reverse route for hosts in alphasite to respond
+  * Compression: `Adaptive LZO Compression` - set for easier match on OpenWRT
+  * Gateway creation: IPv4Only - less cruft!
+* Created VPN config on packetron, using the below file (this took a while to build out)
+  ```
+  config openvpn 'packetron_p2p'
+          option dev 'tun'
+          option nobind '1'
+          option verb '3'
+          option port '1195'
+          list remote 'alphasite.garvbox.net'
+          option ca '/etc/openvpn/Packetron+Root+CA.crt'
+          option cert '/etc/openvpn/Gammasite+P2P+VPN.crt'
+          option dev_type 'tun'
+          option key '/etc/openvpn/Gammasite+P2P+VPN.key'
+          option client '1'
+          option client_to_client '0'
+          option enabled '1'
+          option comp_lzo 'adaptive'
+          option tun_mtu '1500'
+          option cipher 'AES-128-CBC'
+          option ncp_ciphers 'AES-128-GCM'
+          option auth 'SHA256'
+          option tls_auth '/etc/openvpn/Packetron_P2P_TLS.key'
+          option key_direction '1'
+  ```
+  At this point the vpn connection was up (with `/etc/init.d/openvpn restart`)
 * Created a new firewall zone in the openWRT UI (Network->Firewall->Add)
   * Named this alphasite as it represents the target site zone
-  * Added `tun0` as the interface, this is auto-created by openVPN
   * Input/Output/Forward all set to accept
-  * IP Masquerading (NAT) enabled
-    * this basically means we dont have to worry about routing from alphasite back to gammasite as we are like a NAT there.
-    * It also means that client machines on gammasite are not directly accessible from client machines in alphasite.
   * Set "allow forward to" and "allow forward from" zones both to include LAN zone, allowing traffic in and out
-  * Hit save and apply - should be working now
+  * In Advanced settings -> covered devices, added `tun0` for the VPN tunnel device
+  * Hit save and apply
 * Create a DNS forwarding rule on `cm-routey`
   * On Network->DHCP and DNS, add `/glenside.lan/10.0.0.1` to DNS forwardings
   * Add `glenside.lan` to Domain Whitelist to allow local IPs through rebind protection
+* Add DNS forwarding rule on `packetron`
+  * On PFsense go to DNS sresolver settings and add the following to custom options:  
+  `private-domain: "gammasite.lan"`
+  * Still in DNS resolver settings, under Domain overrides, add an entry for
+  `gammasite.lan` pointing to server `192.168.0.1`
