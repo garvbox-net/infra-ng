@@ -81,11 +81,16 @@ Steps to create:
   * Set "allow forward to" and "allow forward from" zones both to include LAN zone, allowing traffic in and out
   * In Advanced settings -> covered devices, added `tun0` for the VPN tunnel device
   * Hit save and apply
-* Create a DNS forwarding rule on `cm-routey`
+* Set up DNS on `cm-routey`:
   * On Network->DHCP and DNS, add `/glenside.lan/10.0.0.1` to DNS forwardings
   * Add `glenside.lan` to Domain Whitelist to allow local IPs through rebind protection
-* Add DNS forwarding rule on `packetron`
-  * On PFsense go to DNS sresolver settings and add the following to custom options:  
+  * Add `lan` and `tun0` as listen interfaces to allow the DNS resolver listen to the VPN tunnel interface
+* Set up DNS on `packetron`:
+  * On PFsense go to DNS resolver settings and add the following to custom options:  
   `private-domain: "gammasite.lan"`
   * Still in DNS resolver settings, under Domain overrides, add an entry for
   `gammasite.lan` pointing to server `192.168.0.1`
+  * Disable DNSSEC support if enabled
+  * Go to "Access Lists" and create an "allow" list for the gammasite network range.
+    * Access list name: `VPN LANs` (so that we can add more ranges for other vpn tunnels)
+    * Networks: `192.168.0.0/24`
