@@ -5,3 +5,4 @@
     config:
       security.nesting: "true"
   when: lxd_docker_host
+  delegate_to: "{{ lxd_server | default('localhost') }}"
