@@ -2,7 +2,7 @@
 # NOTE: this must be run from the LXD server only, remote setups are not working
 
 - name: Build & Configure LXD Container
-  hosts: lxd_containers
+  hosts: "{{ container | default([])}}"
   gather_facts: no
 
   roles:

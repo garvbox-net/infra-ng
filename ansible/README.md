@@ -15,6 +15,8 @@ Automatic deployment of containers and initial configuration (user etc).
 * Notes:
   * This must be run from the LXD server as remote LXD commands dont really work well.
   * This will deploy a new ubuntu container and do basic user and networking setup
+* Extra Vars:
+  * `-e container=<container_name>`
 
 ## Docker Servers
 Installation of docker, docker compose

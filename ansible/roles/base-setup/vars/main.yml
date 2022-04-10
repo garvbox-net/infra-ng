@@ -1,0 +1,4 @@
+# User Creation for new containers
+admin_user_name: garvin
+admin_user_uid: 1666
+admin_user_pass_enc: "$6$mi1neuur$qXfu9fS5lcc01BCC.kyeU6NKUlVdXdG9pm20NX8GB7ODb9PP2KxEIcYZWtdzibz5nRpKVBEN4n1fizBOUrKi30"
