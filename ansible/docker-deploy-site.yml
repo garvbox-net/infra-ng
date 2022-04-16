@@ -12,6 +12,10 @@
         community.docker.docker_network:
           name: web
           state: present
+        
+      - name: Set LE CA
+        ansible.builtin.set_fact:
+          le_ca_server: "{{ '' if le_prod | default(false) else 'https://acme-staging-v02.api.letsencrypt.org/directory' }}"
 
       - name: Deploy Traefik and Watchtower
         community.docker.docker_compose:
@@ -52,7 +56,7 @@
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt=true
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE=/letsencrypt/acme.json
                   # STAGING CA
-                  - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory
+                  - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER={{le_ca_server}}
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE=true
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_RESOLVERS=1.1.1.1
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_PROVIDER=cloudflare
