@@ -1,0 +1,99 @@
+
+
+- name: Deploy Core Infra
+  hosts: docker_hosts
+  gather_facts: no
+  environment:
+    DOCKER_HOST: "ssh://{{ansible_host}}"
+
+  tasks:
+    - block:  # Delegation Block
+      - name: Create/Check Web Network Exists
+        community.docker.docker_network:
+          name: web
+          state: present
+
+      - name: Deploy Traefik and Watchtower
+        community.docker.docker_compose:
+          project_name: infra
+          state: present
+          definition:
+            version: '3'
+            services:
+              traefik:
+                image: traefik:v2.6
+                container_name: traefik
+                restart: always
+                ports:
+                  - 80:80
+                  - 443:443
+                  - 8080:8080
+                networks:
+                  - web
+                volumes:
+                  - /etc/localtime:/etc/localtime:ro
+                  - /var/run/docker.sock:/var/run/docker.sock:ro
+                  - letsencrypt:/letsencrypt
+                environment:
+                  - TRAEFIK_LOG_LEVEL=info
+                  - TRAEFIK_ENTRYPOINTS_web-http_ADDRESS=:80
+                  - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_TO=web-https
+                  - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME=https
+                  # Web-https provider with default SSL config including wildcard domain for linked services
+                  - TRAEFIK_ENTRYPOINTS_web-https_ADDRESS=:443
+                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS=true
+                  # - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_CERTRESOLVER=letsencrypt
+                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_MAIN={{tls_domain_main}}
+                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_SANS={{tls_domain_sans}}
+                  - TRAEFIK_PROVIDERS_DOCKER=true
+                  - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+                  - TRAEFIK_PROVIDERS_DOCKER_NETWORK=web
+                  - TRAEFIK_API=true
+                  - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt=true
+                  - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE=/letsencrypt/acme.json
+                  # STAGING CA
+                  - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory
+                  - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE=true
+                  - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_RESOLVERS=1.1.1.1
+                  - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_PROVIDER=cloudflare
+                  - CLOUDFLARE_EMAIL={{ cf_email }}
+                  - CLOUDFLARE_API_KEY={{ cf_api_key }}
+                labels:
+                  - "traefik.enable=true"
+                  - "traefik.http.routers.dashboard.rule=Host(`traefik.{{tls_domain_main}}`)"
+                  - "traefik.http.routers.dashboard.service=api@internal"
+                  - "traefik.http.routers.dashboard.entrypoints=web-https"
+                  - "traefik.http.routers.dashboard.middlewares=dashwl"
+                  - "traefik.http.middlewares.dashwl.ipwhitelist.sourcerange=192.168.0.0/16,10.0.0.0/8"
+                  - "com.centurylinklabs.watchtower.enable=true"
+              watchtower:
+                container_name: watchtower
+                image: containrrr/watchtower
+                restart: always
+                volumes:
+                  - /etc/localtime:/etc/localtime:ro
+                  - /var/run/docker.sock:/var/run/docker.sock
+                environment:
+                  - WATCHTOWER_CLEANUP=true
+                  - WATCHTOWER_LABEL_ENABLE=true
+                  - WATCHTOWER_NO_STARTUP_MESSAGE=true
+                  - WATCHTOWER_POLL_INTERVAL=60
+                  - WATCHTOWER_SCHEDULE=0 0 6 * * *
+                  - WATCHTOWER_NOTIFICATIONS=shoutrrr
+                  - WATCHTOWER_NOTIFICATION_URL={{ watchtower_notification_url }}
+                labels:
+                  - "com.centurylinklabs.watchtower.enable=true"
+
+            volumes:
+              letsencrypt: {}
+
+            networks:
+              web:
+                external: true
+        register: infra
+
+      - debug:
+          var: infra
+
+      # End Delegation Block
+      delegate_to: localhost

@@ -1,0 +1,6 @@
+# alphasite non-secret vars
+---
+lxd_server: kraken
+site_name: alphasite
+tls_domain_main: alphasite.garvbox.net
+tls_domain_sans: "*.alphasite.garvbox.net,secure.garvbox.net"
