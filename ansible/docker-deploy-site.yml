@@ -39,23 +39,24 @@
                   - /var/run/docker.sock:/var/run/docker.sock:ro
                   - letsencrypt:/letsencrypt
                 environment:
+                  # General Traefik Settings
+                  - TRAEFIK_API=true
                   - TRAEFIK_LOG_LEVEL=info
-                  - TRAEFIK_ENTRYPOINTS_web-http_ADDRESS=:80
-                  - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_TO=web-https
-                  - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME=https
-                  # Web-https provider with default SSL config including wildcard domain for linked services
-                  - TRAEFIK_ENTRYPOINTS_web-https_ADDRESS=:443
-                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS=true
-                  # - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_CERTRESOLVER=letsencrypt
-                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_MAIN={{tls_domain_main}}
-                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_SANS={{tls_domain_sans}}
                   - TRAEFIK_PROVIDERS_DOCKER=true
                   - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
                   - TRAEFIK_PROVIDERS_DOCKER_NETWORK=web
-                  - TRAEFIK_API=true
+                  # Entrypoints
+                  - TRAEFIK_ENTRYPOINTS_web-http_ADDRESS=:80
+                  - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_TO=web-https
+                  - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME=https
+                  - TRAEFIK_ENTRYPOINTS_web-https_ADDRESS=:443
+                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS=true
+                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_CERTRESOLVER=letsencrypt
+                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_MAIN={{tls_domain_main}}
+                  - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_SANS={{tls_domain_sans}}
+                  # SSL / Certificate Management
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt=true
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE=/letsencrypt/acme.json
-                  # STAGING CA
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER={{le_ca_server}}
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE=true
                   - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_RESOLVERS=1.1.1.1
