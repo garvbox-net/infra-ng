@@ -1,0 +1,7 @@
+# alphasite non-secret vars
+---
+lxd_server: kraken
+site_name: testsite
+tls_domain_main: testsite.garvbox.net
+tls_domain_sans: "*.testsite.garvbox.net"
+# le_prod: true
