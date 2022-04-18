@@ -1,0 +1,18 @@
+## Default Initial HomeAssistant Config copied by Ansible
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Docker-friendly HTTP proxy permissions
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+   - 172.16.0.0/12

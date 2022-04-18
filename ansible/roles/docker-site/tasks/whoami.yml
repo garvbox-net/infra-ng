@@ -1,0 +1,25 @@
+
+
+
+- name: Deploy Whoami
+  community.docker.docker_compose:
+    project_name: whoami
+    definition:
+      version: '3'
+      services:
+        whoami:
+          container_name: whoami
+          image: containous/whoami
+          restart: always
+          ports:
+            - 80
+          labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.whoami.rule=Host(`whoami.{{ tls_domain_main }}`)"
+            - "traefik.http.routers.whoami.entrypoints=web-https"
+            - "com.centurylinklabs.watchtower.enable=true"
+          networks:
+            - web
+      networks:
+        web:
+          external: true

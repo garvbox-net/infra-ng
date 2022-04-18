@@ -1,27 +1,6 @@
 
-
 - name: Deploy Standardised Docker Site and Apps
   hosts: docker_hosts
   gather_facts: no
-
-  tasks:
-    - name: Include Docker Client Setup Tasks
-      import_role:
-        name: docker-site
-        tasks_from: client.yml
-      tags:
-        - client
-
-    - name: Include Site Infra Tasks
-      import_role:
-        name: docker-site
-        tasks_from: infra.yml
-      tags:
-        - infra
-
-    - name: Include Site App Deployment Tasks
-      import_role:
-        name: docker-site
-        tasks_from: apps.yml
-      tags:
-        - apps
+  roles:
+    - docker-site

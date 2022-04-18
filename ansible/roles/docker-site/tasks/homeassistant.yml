@@ -1,0 +1,66 @@
+
+- name: Remove HA Docker Volume
+  community.docker.docker_volume:
+    name: homeassistant_ha_config
+    state: absent
+  when: remove_ha_volume | default(false)
+
+- name: Check if Homeassistant data exists
+  community.docker.docker_volume_info:
+    name: homeassistant_ha_config
+  register: volume_check
+
+- name: Deploy Homeassistant
+  community.docker.docker_compose:
+    project_name: homeassistant
+    state: present
+    definition:
+      version: '3'
+      services:
+        homeassistant:
+          container_name: homeassistant
+          image: "ghcr.io/home-assistant/home-assistant:stable"
+          volumes:
+            - "ha_config:/config"
+            - /etc/localtime:/etc/localtime:ro
+          restart: always
+          ports:
+            - 8123
+          labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.homeassistant.rule=Host(`homeassistant.{{ tls_domain_main }}`)"
+            - "traefik.http.routers.homeassistant.entrypoints=web-https"
+            - "com.centurylinklabs.watchtower.enable=true"
+          networks:
+            - web
+      networks:
+        web:
+          external: true
+      volumes:
+        ha_config: {}
+  environment:
+    COMPOSE_HTTP_TIMEOUT: 600
+
+- name: Deploy Proxy-Resistant Initial HA config
+  block:      
+    - name: Copy Initial HA config
+      ansible.builtin.copy:
+        src: ha_init_config.yaml
+        dest: /tmp/ha_init_config.yaml
+        owner: garvin
+        group: garvin
+        mode: '0644'
+      when: not volume_check.exists
+    - name: Backup Running HA config from Container
+      ansible.builtin.command:
+        "docker cp homeassistant:/config/configuration.yaml /tmp/ha_config_backup.yaml"
+      when: not volume_check.exists
+    - name: Push initial HA config to container
+      ansible.builtin.command:
+        "docker cp /tmp/ha_init_config.yaml homeassistant:/config/configuration.yaml"
+    - name: restart for initial config
+      community.docker.docker_container:
+        name: homeassistant
+        state: started
+        restart: true
+  when: not volume_check.exists

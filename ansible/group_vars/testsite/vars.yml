@@ -8,3 +8,7 @@ tls_domain_main: testsite.garvbox.net
 tls_domain_sans: "*.testsite.garvbox.net"
 # Test site uses staging CA
 # le_prod: true
+
+deploy_apps:
+  - homeassistant
+  - whoami
