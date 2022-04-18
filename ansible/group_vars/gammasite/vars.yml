@@ -1,0 +1,6 @@
+# Gammasite non-secret vars
+---
+# Traefik Setup
+tls_domain_main: gammasite.garvbox.net
+tls_domain_sans: "*.gammasite.garvbox.net"
+le_prod: true

@@ -3,8 +3,10 @@
 - name: Deploy Core Infra
   hosts: docker_hosts
   gather_facts: no
+  vars:
+    docker_host: "{{ inventory_hostname if ansible_host == 'localhost' else ansible_host }}"
   environment:
-    DOCKER_HOST: "ssh://{{ansible_host}}"
+    DOCKER_HOST: "ssh://{{ docker_host }}"
 
   tasks:
     - block:  # Delegation Block
@@ -12,7 +14,7 @@
         community.docker.docker_network:
           name: web
           state: present
-        
+
       - name: Set LE CA
         ansible.builtin.set_fact:
           le_ca_server: "{{ '' if le_prod | default(false) else 'https://acme-staging-v02.api.letsencrypt.org/directory' }}"

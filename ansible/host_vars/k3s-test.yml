@@ -1,0 +1,9 @@
+---
+# Customised K3S Deployment on LXD Container
+k3s_server:
+  disable:
+    - traefik
+    - servicelb
+    - coredns
+    - metrics-server
+  data-dir: /data/k3s

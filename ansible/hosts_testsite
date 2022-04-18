@@ -1,0 +1,14 @@
+## Site Groups - Location-specific groupings
+[testsite]
+dockracken  ansible_host=dockracken.glenside.lan
+k3s-test
+
+## Functional Groups - role and extra vars
+[docker_hosts]
+dockracken
+
+[lxd_containers]
+dockracken
+
+[k3s_cluster]
+k3s-test  ansible_host=k3s-test.glenside.lan

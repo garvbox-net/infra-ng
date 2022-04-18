@@ -1,7 +1,9 @@
-# alphasite non-secret vars
+# testsite non-secret vars
 ---
 lxd_server: kraken
-site_name: testsite
+
+# Traefik Setup
 tls_domain_main: testsite.garvbox.net
 tls_domain_sans: "*.testsite.garvbox.net"
+# Test site uses staging CA
 # le_prod: true

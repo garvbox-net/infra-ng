@@ -1,0 +1,12 @@
+## Site Groups - Location-specific groupings
+[gammasite]
+servapi4
+watcher
+
+
+## Functional Groups - role and extra vars
+[docker_hosts]
+servapi4
+
+[unifi_controllers]
+watcher
