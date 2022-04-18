@@ -36,3 +36,9 @@
     password: "{{ admin_user_pass_enc }}"
     create_home: true
     shell: /bin/bash
+
+# Pip is pretty much always needed!
+- name: Install Python pip
+  ansible.builtin.apt:
+    pkg:
+      - python3-pip

@@ -1,0 +1,13 @@
+
+
+
+- name: Find Site Apps
+  find:
+    paths: "../sites/{{ site_name }}/"
+    file_type: directory
+  register: found_apps
+
+- name: Deploy Site Apps
+  debug:
+    var: "{{item}}"
+  loop: "{{found_apps.files}}"

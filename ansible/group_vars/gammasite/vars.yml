@@ -1,5 +1,6 @@
 # Gammasite non-secret vars
 ---
+site_name: gammasite
 # Traefik Setup
 tls_domain_main: gammasite.garvbox.net
 tls_domain_sans: "*.gammasite.garvbox.net"

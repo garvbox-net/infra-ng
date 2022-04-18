@@ -1,0 +1,8 @@
+# Docker Client Setup on remote machine
+# Done without become - all user-side
+---
+
+- name: Install Docker Python Requirements
+  pip:
+    name: docker,docker-compose
+    state: present
