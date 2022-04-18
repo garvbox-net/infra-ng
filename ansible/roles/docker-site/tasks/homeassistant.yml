@@ -1,10 +1,4 @@
 
-- name: Remove HA Docker Volume
-  community.docker.docker_volume:
-    name: homeassistant_ha_config
-    state: absent
-  when: remove_ha_volume | default(false)
-
 - name: Check if Homeassistant data exists
   community.docker.docker_volume_info:
     name: homeassistant_ha_config
@@ -13,7 +7,7 @@
 - name: Deploy Homeassistant
   community.docker.docker_compose:
     project_name: homeassistant
-    state: present
+    state: "{{ docker_tgt_state }}"
     definition:
       version: '3'
       services:
@@ -55,6 +49,7 @@
       ansible.builtin.command:
         "docker cp homeassistant:/config/configuration.yaml /tmp/ha_config_backup.yaml"
       when: not volume_check.exists
+      ignore_errors: yes
     - name: Push initial HA config to container
       ansible.builtin.command:
         "docker cp /tmp/ha_init_config.yaml homeassistant:/config/configuration.yaml"
@@ -63,4 +58,10 @@
         name: homeassistant
         state: started
         restart: true
-  when: not volume_check.exists
+  when: not volume_check.exists and not remove_apps
+
+- name: Remove HA Docker Volume
+  community.docker.docker_volume:
+    name: homeassistant_ha_config
+    state: absent
+  when: remove_apps and remove_volumes
