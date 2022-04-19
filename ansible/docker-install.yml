@@ -2,7 +2,7 @@
 
 - name: Docker Server Install
   hosts: docker_hosts
-  become: "{{ True if not lxd_docker_host else False}}"
+  become: true
 
   roles:
     - docker-host
