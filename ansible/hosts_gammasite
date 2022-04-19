@@ -5,7 +5,7 @@ watcher
 
 
 ## Functional Groups - role and extra vars
-[docker_hosts]
+[docker_host]
 servapi4
 
 [unifi_controllers]
