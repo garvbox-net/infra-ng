@@ -1,5 +1,0 @@
----
-# Default for app removal disabled
-remove_apps: false
-remove_volumes: false   # NOTE this will remove ALL data for apps
-docker_tgt_state: "{{ 'absent' if remove_apps else 'present' }}"

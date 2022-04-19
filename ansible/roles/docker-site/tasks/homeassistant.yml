@@ -2,12 +2,17 @@
 - name: Check if Homeassistant data exists
   community.docker.docker_volume_info:
     name: homeassistant_ha_config
-  register: volume_check
+  register: ha_vol_check
+
+- name: Check if Mosquitto data exists
+  community.docker.docker_volume_info:
+    name: homeassistant_mosquitto_conf
+  register: mos_vol_check
 
 - name: Deploy Homeassistant
   community.docker.docker_compose:
     project_name: homeassistant
-    state: "{{ docker_tgt_state }}"
+    state: present
     definition:
       version: '3'
       services:
@@ -27,13 +32,27 @@
             - "com.centurylinklabs.watchtower.enable=true"
           networks:
             - web
+        mosquitto:
+          container_name: mosquitto
+          image: eclipse-mosquitto:2.0
+          restart: always
+          volumes:
+            - mosquitto_conf:/mosquitto/config
+          ports:
+            - 1883:1883
+            - 9001:9001
+          networks:
+            - ha-internal
+          labels:
+            - "com.centurylinklabs.watchtower.enable=true"
       networks:
         web:
           external: true
       volumes:
         ha_config: {}
+        mosquitto_conf: {}
   environment:
-    COMPOSE_HTTP_TIMEOUT: 600
+    COMPOSE_HTTP_TIMEOUT: "600"
 
 - name: Deploy Proxy-Resistant Initial HA config
   block:      
@@ -44,12 +63,10 @@
         owner: garvin
         group: garvin
         mode: '0644'
-      when: not volume_check.exists
     - name: Backup Running HA config from Container
       ansible.builtin.command:
         "docker cp homeassistant:/config/configuration.yaml /tmp/ha_config_backup.yaml"
-      when: not volume_check.exists
-      ignore_errors: yes
+      ignore_errors: true
     - name: Push initial HA config to container
       ansible.builtin.command:
         "docker cp /tmp/ha_init_config.yaml homeassistant:/config/configuration.yaml"
@@ -58,10 +75,28 @@
         name: homeassistant
         state: started
         restart: true
-  when: not volume_check.exists and not remove_apps
+  when: not ha_vol_check.exists
 
-- name: Remove HA Docker Volume
-  community.docker.docker_volume:
-    name: homeassistant_ha_config
-    state: absent
-  when: remove_apps and remove_volumes
+- name: Deploy Initial Mosquitto Config
+  block:      
+    - name: Copy Initial Mosquitto Config
+      ansible.builtin.copy:
+        src: mosquitto.conf
+        dest: /tmp/mosquitto.conf
+        owner: garvin
+        group: garvin
+        mode: '0644'
+    - name: Backup Running Mosquitto config from Container
+      ansible.builtin.command:
+        "docker cp mosquitto:/mosquitto/mosquitto.conf /tmp/mosquitto.conf"
+      ignore_errors: true
+    - name: Push initial Mosquitto config to container
+      ansible.builtin.command:
+        "docker cp /tmp/mosquitto.conf homeassistant:/mosquitto/mosquitto.conf"
+    - name: restart for initial config
+      community.docker.docker_container:
+        name: mosquitto
+        state: started
+        restart: true
+  when: not mos_vol_check.exists
+  
