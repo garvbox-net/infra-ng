@@ -1,5 +1,10 @@
 
-# Block used for delegation - all this will run on the LXD host
+- name: "Grab Local SSH Key"
+  set_fact:
+    local_ssh_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  delegate_to: localhost
+
+# Delegate LXD Tasks to LXD Server
 - name: "Create Standardised LXD Container"
   delegate_to: "{{ lxd_server | default('localhost') }}"
   block:
@@ -33,3 +38,44 @@
         wait_for_ipv4_addresses: true
         timeout: 600
       when: (not container_exists) or lxd_recreate | bool
+
+    # Using the lxc CLI we can enable SSH for root user temporarily
+    - name: Copy SSH key to remote
+      ansible.builtin.shell: "lxc exec {{ container }} -- sh -c \"mkdir -p /root/.ssh && echo '{{local_ssh_key}}' >> /root/.ssh/authorized_keys\""
+
+# Set up SSH remote host key in local hosts file
+- name: Set Remote host FQDN
+  set_fact:
+    ssh_fqdn: "{{ inventory_hostname if ansible_host == 'localhost' else ansible_host }}"
+
+- name: Check SSH known_hosts for {{ ssh_fqdn }}
+  local_action: shell ssh-keygen -l -F {{ ssh_fqdn }}
+  register: checkForKnownHostsEntry
+  failed_when: false
+  changed_when: false
+  ignore_errors: yes
+
+- name: Add {{ ssh_fqdn }} to SSH known hosts automatically
+  when: checkForKnownHostsEntry.rc == 1
+  changed_when: checkForKnownHostsEntry.rc == 1
+  local_action: 
+      module: shell
+      args: ssh-keyscan -H "{{ ssh_fqdn }}" >> $HOME/.ssh/known_hosts
+
+# With the SSH key Deployed we can run with ssh user, making role exec easier
+- name: Run Base Setup Tasks
+  include_role:
+    name: base-setup
+    apply:
+      remote_user: root
+
+- name: Push current SSH Key
+  ansible.posix.authorized_key:
+    user: garvin
+    state: present
+    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+- name: Remove SSH Key from root user
+  ansible.builtin.command: "rm -f /root/.ssh/authorized_keys"
+  apply:
+    remote_user: root

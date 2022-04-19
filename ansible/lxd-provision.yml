@@ -7,4 +7,3 @@
 
   roles:
     - lxd
-    - base-setup
