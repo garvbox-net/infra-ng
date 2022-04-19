@@ -1,3 +1,11 @@
 # Role Defaults: docker-site
 ---
 docker_tgt_state: present
+
+# Watchtower Defaults
+watchtower_no_startup_msg: true
+watchtower_label_enable: true
+watchtower_cleanup: true
+watchtower_poll_interval: 60
+watchtower_notification: shoutrrr
+watchtower_notification_url: ''

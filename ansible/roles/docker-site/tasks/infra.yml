@@ -23,7 +23,6 @@
           ports:
             - 80:80
             - 443:443
-            - 8080:8080
           networks:
             - web
           volumes:
@@ -71,12 +70,12 @@
             - /etc/localtime:/etc/localtime:ro
             - /var/run/docker.sock:/var/run/docker.sock
           environment:
-            - WATCHTOWER_CLEANUP=true
-            - WATCHTOWER_LABEL_ENABLE=true
-            - WATCHTOWER_NO_STARTUP_MESSAGE=true
-            - WATCHTOWER_POLL_INTERVAL=60
+            - WATCHTOWER_CLEANUP={{ watchtower_cleanup }}
+            - WATCHTOWER_LABEL_ENABLE={{ watchtower_label_enable }}
+            - WATCHTOWER_NO_STARTUP_MESSAGE={{ watchtower_no_startup_msg }}
+            - WATCHTOWER_POLL_INTERVAL={{ watchtower_poll_interval }}
             - WATCHTOWER_SCHEDULE=0 0 6 * * *
-            - WATCHTOWER_NOTIFICATIONS=shoutrrr
+            - WATCHTOWER_NOTIFICATIONS={{ watchtower_notification }}
             - WATCHTOWER_NOTIFICATION_URL={{ watchtower_notification_url }}
           labels:
             - "com.centurylinklabs.watchtower.enable=true"
