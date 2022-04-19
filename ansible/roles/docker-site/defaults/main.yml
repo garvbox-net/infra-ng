@@ -1,0 +1,3 @@
+# Role Defaults: docker-site
+---
+docker_tgt_state: present

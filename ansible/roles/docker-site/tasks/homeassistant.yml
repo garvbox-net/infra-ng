@@ -12,7 +12,7 @@
 - name: Deploy Homeassistant
   community.docker.docker_compose:
     project_name: homeassistant
-    state: present
+    state: "{{ docker_tgt_state }}"
     definition:
       version: '3'
       services:
@@ -48,6 +48,7 @@
       networks:
         web:
           external: true
+        ha-internal: {}
       volumes:
         ha_config: {}
         mosquitto_conf: {}
@@ -92,7 +93,7 @@
       ignore_errors: true
     - name: Push initial Mosquitto config to container
       ansible.builtin.command:
-        "docker cp /tmp/mosquitto.conf homeassistant:/mosquitto/mosquitto.conf"
+        "docker cp /tmp/mosquitto.conf mosquitto:/mosquitto/mosquitto.conf"
     - name: restart for initial config
       community.docker.docker_container:
         name: mosquitto
