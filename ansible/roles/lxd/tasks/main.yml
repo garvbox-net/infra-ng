@@ -74,8 +74,8 @@
     user: garvin
     state: present
     key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  remote_user: root
 
 - name: Remove SSH Key from root user
   ansible.builtin.command: "rm -f /root/.ssh/authorized_keys"
-  apply:
-    remote_user: root
+  remote_user: root

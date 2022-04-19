@@ -40,5 +40,6 @@
 # Pip is pretty much always needed!
 - name: Install Python pip
   ansible.builtin.apt:
+    update_cache: yes
     pkg:
       - python3-pip
