@@ -1,0 +1,10 @@
+
+- name: Sonarr
+  include_tasks:
+    file: "template-xArr.yml"
+    apply:
+      vars:
+        xarr_app_name: sonarr
+        xarr_image: linuxserver/sonarr
+        xarr_ports:
+          - 8989

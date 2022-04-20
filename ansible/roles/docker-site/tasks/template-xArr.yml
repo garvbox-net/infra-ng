@@ -1,0 +1,22 @@
+
+# Generic xArr Container Deployment Example
+# To be used as imported tasks to radarr, sonarr etc
+# Relies on a lot of the good standardisation from linuxserver docker containers
+- name: Deploy "{{ xarr_app_name }}"
+  community.docker.docker_container:
+    name: "{{ xarr_app_name }}"
+    image: "{{ xarr_image }}"
+    state: "{{ docker_tgt_state }}"
+    ports: "{{ xarr_ports  }}"
+    env:
+      PUID: "{{media_user_uid | default(1000)}}"
+      PGID: "{{media_user_gid | default(1000)}}"
+      TZ: "{{ media_tz | default('UTC') }}"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.{{ xarr_app_name }}.rule: "Host(`{{ xarr_app_name }}.{{ tls_domain_main }}`)"
+      traefik.http.routers.{{ xarr_app_name }}.entrypoints: "web-https"
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - name: "web"
+    memory: "256M"

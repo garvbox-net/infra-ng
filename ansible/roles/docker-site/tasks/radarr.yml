@@ -1,0 +1,10 @@
+
+- name: Radarr
+  include_tasks:
+    file: "template-xArr.yml"
+    apply:
+      vars:
+        xarr_app_name: radarr
+        xarr_image: linuxserver/radarr
+        xarr_ports:
+          - 7878

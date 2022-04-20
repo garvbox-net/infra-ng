@@ -1,6 +1,6 @@
 # Role Defaults: docker-site
 ---
-docker_tgt_state: present
+docker_tgt_state: started
 
 # Watchtower Defaults
 watchtower_no_startup_msg: true
