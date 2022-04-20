@@ -1,10 +1,24 @@
 
-- name: Sonarr
-  include_tasks:
-    file: "template-xArr.yml"
-    apply:
-      vars:
-        xarr_app_name: sonarr
-        xarr_image: linuxserver/sonarr
-        xarr_ports:
-          - 8989
+- name: Deploy Sonarr
+  community.docker.docker_container:
+    name: "{{xarr_app_name}}"
+    image: linuxserver/{{xarr_app_name}}
+    state: "{{ docker_tgt_state }}"
+    ports:
+      - 8989
+    env:
+      PUID: "{{media_user_uid | default(1000)}}"
+      PGID: "{{media_user_gid | default(1000)}}"
+      TZ: "{{ media_tz | default('UTC') }}"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.sonarr.rule: "Host(`{{ xarr_app_name }}.{{ tls_domain_main }}`)"
+      traefik.http.routers.sonarr.entrypoints: "web-https"
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - name: "web"
+    memory: "256M"
+    volumes:
+      - "{{xarr_app_name}}_config:/config"
+  vars:
+    xarr_app_name: sonarr
