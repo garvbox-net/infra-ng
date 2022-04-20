@@ -1,0 +1,20 @@
+# testsite non-secret vars
+---
+lxd_server: kraken
+site_name: alphasite
+
+# Traefik Setup
+tls_domain_main: alphasite.garvbox.net
+tls_domain_sans: "*.alphasite.garvbox.net"
+le_prod: true
+
+
+deploy_apps:
+  - radarr
+  - sonarr
+
+# Media Server Vars
+# Match Plex UID/GID for containers
+media_user_uid: 6666
+media_user_gid: 6666
+media_tz: "Europe/Dublin"

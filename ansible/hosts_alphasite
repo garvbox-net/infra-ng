@@ -1,0 +1,7 @@
+## Site Groups - Location-specific groupings
+[alphasite]
+dockraken  ansible_host=dockraken.glenside.lan
+
+## Functional Groups - role and extra vars
+[docker_host]
+dockraken   lxd_docker_host=true
