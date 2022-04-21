@@ -11,5 +11,6 @@ docker_packages:
   - docker-ce
   - docker-ce-cli
   - containerd.io
+  - python3-pip   # pip used for docker compose and ansible extras
 
 docker_network_bridge: true
