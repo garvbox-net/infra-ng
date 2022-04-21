@@ -1,19 +1,19 @@
 
-- name: Deploy Sonarr
+- name: Deploy Radarr
   community.docker.docker_container:
     name: "{{xarr_app_name}}"
     image: linuxserver/{{xarr_app_name}}
-    state: "{{ docker_tgt_state }}"
+    state: present
     ports:
-      - 8989
+      - 7878
     env:
       PUID: "{{media_user_uid | default(1000)}}"
       PGID: "{{media_user_gid | default(1000)}}"
       TZ: "{{ media_tz | default('UTC') }}"
     labels:
       traefik.enable: "true"
-      traefik.http.routers.sonarr.rule: "Host(`{{ xarr_app_name }}.{{ tls_domain_main }}`)"
-      traefik.http.routers.sonarr.entrypoints: "web-https"
+      traefik.http.routers.radarr.rule: "Host(`{{xarr_app_name}}.{{ tls_domain_main }}`)"
+      traefik.http.routers.radarr.entrypoints: "web-https"
       com.centurylinklabs.watchtower.enable: "true"
     networks:
       - name: "web"
@@ -21,4 +21,4 @@
     volumes:
       - "{{xarr_app_name}}_config:/config"
   vars:
-    xarr_app_name: sonarr
+    xarr_app_name: radarr

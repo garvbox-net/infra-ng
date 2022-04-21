@@ -4,7 +4,7 @@
   community.docker.docker_container:
     name: whoami 
     image: containous/whoami
-    state: "{{ docker_tgt_state }}"
+    state: present
     ports:
       - 80
     restart_policy: "unless-stopped"

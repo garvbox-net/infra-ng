@@ -1,0 +1,6 @@
+# Whoami test server
+---
+- name: Remove Whoami
+  community.docker.docker_container:
+    name: whoami
+    state: absent

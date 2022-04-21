@@ -1,0 +1,15 @@
+
+- name: Set App Name
+  ansible.builtin.set_fact:
+    xarr_app_name: sonarr
+
+- name: Remove "{{ xarr_app_name }}"
+  community.docker.docker_container:
+    name: "{{ xarr_app_name }}"
+    state: absent
+
+- name: Remove Volumes 
+  community.docker.docker_volume:
+    name: "{{ xarr_app_name }}_config"
+    state: absent
+  when: docker_remove_vols

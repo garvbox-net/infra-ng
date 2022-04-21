@@ -17,9 +17,19 @@
   tags:
     - infra
 
+- name: Include Site App Removal Tasks
+  include_tasks:
+    file: "remove/{{ item }}.yml"
+    apply:
+      tags:
+        - apps
+  loop: "{{remove_apps | default([])}}"
+  tags:
+    - apps
+
 - name: Include Site App Deployment Tasks
   include_tasks:
-    file: "{{ item }}.yml"
+    file: "deploy/{{ item }}.yml"
     apply:
       tags:
         - apps

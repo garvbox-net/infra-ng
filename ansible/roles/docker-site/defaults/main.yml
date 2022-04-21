@@ -1,6 +1,6 @@
 # Role Defaults: docker-site
 ---
-docker_tgt_state: started
+docker_remove_vols: false
 
 # Watchtower Defaults
 watchtower_no_startup_msg: true

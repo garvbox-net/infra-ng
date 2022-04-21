@@ -16,7 +16,7 @@
   community.docker.docker_container:
     name: homeassistant
     image: "ghcr.io/home-assistant/home-assistant:stable"
-    state: "{{ docker_tgt_state }}"
+    state: present
     restart_policy: "unless-stopped"
     ports:
       -  8123
@@ -56,14 +56,14 @@
   community.docker.docker_container:
     name: mosquitto
     image: eclipse-mosquitto:2.0
-    state: "{{ docker_tgt_state }}"
+    state: present
     restart_policy: "unless-stopped"
     ports:
       - 1883:1883
       - 9001:9001
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mosquitto_conf:/mosquitto/config
+      - mosquitto_config:/mosquitto/config
     labels:
       com.centurylinklabs.watchtower.enable: "true"
     networks:

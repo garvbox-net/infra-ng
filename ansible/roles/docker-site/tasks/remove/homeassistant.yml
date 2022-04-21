@@ -1,0 +1,25 @@
+# HomeAssistant and Mosquitto deployment
+# NOTE: Configs are only pushed on initial deployment to avoid
+#   potential for overwriting setups
+---
+- name: Remove HomeAssistant Internal Network
+  community.docker.docker_network:
+    name: "ha-internal"
+    state: absent
+
+- name: Remove Containers - {{ item }}
+  community.docker.docker_container:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - homeassistant
+    - mosquitto
+
+- name: Remove Volumes 
+  community.docker.docker_volume:
+    name: "{{ item }}_config"
+    state: absent
+  loop:
+    - homeassistant
+    - mosquitto
+  when: docker_remove_vols
