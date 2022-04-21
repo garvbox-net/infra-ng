@@ -3,7 +3,8 @@
   community.docker.docker_container:
     name: "{{xarr_app_name}}"
     image: linuxserver/{{xarr_app_name}}
-    state: present
+    state: started
+    restart_policy: "unless-stopped"
     ports:
       - 7878
     env:
