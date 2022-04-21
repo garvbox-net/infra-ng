@@ -1,26 +1,17 @@
-
-
-
+# Whoami test server
+---
 - name: Deploy Whoami
-  community.docker.docker_compose:
-    project_name: whoami
+  community.docker.docker_container:
+    name: whoami 
+    image: containous/whoami
     state: "{{ docker_tgt_state }}"
-    definition:
-      version: '3'
-      services:
-        whoami:
-          container_name: whoami
-          image: containous/whoami
-          restart: always
-          ports:
-            - 80
-          labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.whoami.rule=Host(`whoami.{{ tls_domain_main }}`)"
-            - "traefik.http.routers.whoami.entrypoints=web-https"
-            - "com.centurylinklabs.watchtower.enable=true"
-          networks:
-            - web
-      networks:
-        web:
-          external: true
+    ports:
+      - 80
+    restart_policy: "unless-stopped"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.whoami.rule: "Host(`whoami.{{ tls_domain_main }}`)"
+      traefik.http.routers.whoami.entrypoints: "web-https"
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - name: "web"

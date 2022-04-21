@@ -1,59 +1,36 @@
+# HomeAssistant and Mosquitto deployment
+# NOTE: Configs are only pushed on initial deployment to avoid
+#   potential for overwriting setups
+---
+- name: Create HomeAssistant Internal Network
+  community.docker.docker_network:
+    name: "ha-internal"
+    state: present
 
 - name: Check if Homeassistant data exists
   community.docker.docker_volume_info:
-    name: homeassistant_ha_config
+    name: homeassistant_config
   register: ha_vol_check
 
-- name: Check if Mosquitto data exists
-  community.docker.docker_volume_info:
-    name: homeassistant_mosquitto_conf
-  register: mos_vol_check
-
 - name: Deploy Homeassistant
-  community.docker.docker_compose:
-    project_name: homeassistant
+  community.docker.docker_container:
+    name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
     state: "{{ docker_tgt_state }}"
-    definition:
-      version: '3'
-      services:
-        homeassistant:
-          container_name: homeassistant
-          image: "ghcr.io/home-assistant/home-assistant:stable"
-          volumes:
-            - "ha_config:/config"
-            - /etc/localtime:/etc/localtime:ro
-          restart: always
-          ports:
-            - 8123
-          labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.homeassistant.rule=Host(`homeassistant.{{ tls_domain_main }}`)"
-            - "traefik.http.routers.homeassistant.entrypoints=web-https"
-            - "com.centurylinklabs.watchtower.enable=true"
-          networks:
-            - web
-        mosquitto:
-          container_name: mosquitto
-          image: eclipse-mosquitto:2.0
-          restart: always
-          volumes:
-            - mosquitto_conf:/mosquitto/config
-          ports:
-            - 1883:1883
-            - 9001:9001
-          networks:
-            - ha-internal
-          labels:
-            - "com.centurylinklabs.watchtower.enable=true"
-      networks:
-        web:
-          external: true
-        ha-internal: {}
-      volumes:
-        ha_config: {}
-        mosquitto_conf: {}
-  environment:
-    COMPOSE_HTTP_TIMEOUT: "600"
+    restart_policy: "unless-stopped"
+    ports:
+      -  8123
+    volumes:
+      - "homeassistant_config:/config"
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.homeassistant.rule: "Host(`homeassistant.{{ tls_domain_main }}`)"
+      traefik.http.routers.homeassistant.entrypoints: web-https
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - name: "web"
+      - name: "ha-internal"
 
 - name: Deploy Proxy-Resistant Initial HA config
   block:      
@@ -61,9 +38,6 @@
       ansible.builtin.copy:
         src: ha_init_config.yaml
         dest: /tmp/ha_init_config.yaml
-        owner: garvin
-        group: garvin
-        mode: '0644'
     - name: Backup Running HA config from Container
       ansible.builtin.command:
         "docker cp homeassistant:/config/configuration.yaml /tmp/ha_config_backup.yaml"
@@ -78,26 +52,47 @@
         restart: true
   when: not ha_vol_check.exists
 
-- name: Deploy Initial Mosquitto Config
-  block:      
-    - name: Copy Initial Mosquitto Config
-      ansible.builtin.copy:
-        src: mosquitto.conf
-        dest: /tmp/mosquitto.conf
-        owner: garvin
-        group: garvin
-        mode: '0644'
-    - name: Backup Running Mosquitto config from Container
-      ansible.builtin.command:
-        "docker cp mosquitto:/mosquitto/mosquitto.conf /tmp/mosquitto.conf"
-      ignore_errors: true
-    - name: Push initial Mosquitto config to container
-      ansible.builtin.command:
-        "docker cp /tmp/mosquitto.conf mosquitto:/mosquitto/mosquitto.conf"
-    - name: restart for initial config
-      community.docker.docker_container:
-        name: mosquitto
-        state: started
-        restart: true
-  when: not mos_vol_check.exists
-  
+- name: Deploy Mosquitto
+  community.docker.docker_container:
+    name: mosquitto
+    image: eclipse-mosquitto:2.0
+    state: "{{ docker_tgt_state }}"
+    restart_policy: "unless-stopped"
+    ports:
+      - 1883:1883
+      - 9001:9001
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mosquitto_conf:/mosquitto/config
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - name: "ha-internal"
+- name: Copy Running Mosqutto Config
+  ansible.builtin.command:
+    "docker cp mosquitto:/mosquitto/config/mosquitto.conf /tmp/mosquitto.conf"
+
+- name: Bind to all IPs port 1883
+  ansible.builtin.lineinfile:
+    path: /tmp/mosquitto.conf
+    regexp: '^#?listener.*'
+    line: "listener 1883"
+  register: updated_mosquitto_bind
+
+- name: Allow Anonymous Connections
+  ansible.builtin.lineinfile:
+    path: /tmp/mosquitto.conf
+    regexp: '^#?allow_anonymous.*'
+    line: "allow_anonymous true"
+  register: updated_mosquitto_anon
+- name: Push Updated Mosquitto config to container
+  ansible.builtin.command:
+    "docker cp /tmp/mosquitto.conf mosquitto:/mosquitto/config/mosquitto.conf"
+  when: updated_mosquitto_bind.changed or updated_mosquitto_anon.changed
+
+- name: restart for initial config
+  community.docker.docker_container:
+    name: mosquitto
+    state: started
+    restart: true
+  when: updated_mosquitto_bind.changed or updated_mosquitto_anon.changed
