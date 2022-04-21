@@ -9,81 +9,71 @@
   ansible.builtin.set_fact:
     le_ca_server: "{{ '' if le_prod | default(false) else 'https://acme-staging-v02.api.letsencrypt.org/directory' }}"
 
-- name: Deploy Traefik and Watchtower
-  community.docker.docker_compose:
-    project_name: infra
-    state: present
-    definition:
-      version: '3'
-      services:
-        traefik:
-          image: traefik:v2.6
-          container_name: traefik
-          restart: always
-          ports:
-            - 80:80
-            - 443:443
-          networks:
-            - web
-          volumes:
-            - /etc/localtime:/etc/localtime:ro
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-            - letsencrypt:/letsencrypt
-          environment:
-            # General Traefik Settings
-            - TRAEFIK_API=true
-            - TRAEFIK_LOG_LEVEL=info
-            - TRAEFIK_PROVIDERS_DOCKER=true
-            - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
-            - TRAEFIK_PROVIDERS_DOCKER_NETWORK=web
-            # Entrypoints
-            - TRAEFIK_ENTRYPOINTS_web-http_ADDRESS=:80
-            - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_TO=web-https
-            - TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME=https
-            - TRAEFIK_ENTRYPOINTS_web-https_ADDRESS=:443
-            - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS=true
-            - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_CERTRESOLVER=letsencrypt
-            - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_MAIN={{tls_domain_main}}
-            - TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_SANS={{tls_domain_sans}}
-            # SSL / Certificate Management
-            - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt=true
-            - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE=/letsencrypt/acme.json
-            - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER={{le_ca_server}}
-            - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE=true
-            - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_RESOLVERS=1.1.1.1
-            - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_PROVIDER=cloudflare
-            - CLOUDFLARE_EMAIL={{ cf_email }}
-            - CLOUDFLARE_API_KEY={{ cf_api_key }}
-          labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.dashboard.rule=Host(`traefik.{{tls_domain_main}}`)"
-            - "traefik.http.routers.dashboard.service=api@internal"
-            - "traefik.http.routers.dashboard.entrypoints=web-https"
-            - "traefik.http.routers.dashboard.middlewares=dashwl"
-            - "traefik.http.middlewares.dashwl.ipwhitelist.sourcerange=192.168.0.0/16,10.0.0.0/8"
-            - "com.centurylinklabs.watchtower.enable=true"
-        watchtower:
-          container_name: watchtower
-          image: containrrr/watchtower
-          restart: always
-          volumes:
-            - /etc/localtime:/etc/localtime:ro
-            - /var/run/docker.sock:/var/run/docker.sock
-          environment:
-            - WATCHTOWER_CLEANUP={{ watchtower_cleanup }}
-            - WATCHTOWER_LABEL_ENABLE={{ watchtower_label_enable }}
-            - WATCHTOWER_NO_STARTUP_MESSAGE={{ watchtower_no_startup_msg }}
-            - WATCHTOWER_POLL_INTERVAL={{ watchtower_poll_interval }}
-            - WATCHTOWER_SCHEDULE=0 0 6 * * *
-            - WATCHTOWER_NOTIFICATIONS={{ watchtower_notification }}
-            - WATCHTOWER_NOTIFICATION_URL={{ watchtower_notification_url }}
-          labels:
-            - "com.centurylinklabs.watchtower.enable=true"
+- name: Deploy Traefik
+  community.docker.docker_container:
+    name: traefik
+    image: traefik:v2.6
+    state: started
+    restart_policy: "unless-stopped"
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - name: "web"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    env:
+      # General Traefik Settings
+      TRAEFIK_API: "true"
+      TRAEFIK_LOG_LEVEL: "info"
+      TRAEFIK_PROVIDERS_DOCKER: "true"
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: web
+      # Entrypoints
+      TRAEFIK_ENTRYPOINTS_web-http_ADDRESS: ":80"
+      TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_TO: "web-https"
+      TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: "https"
+      TRAEFIK_ENTRYPOINTS_web-https_ADDRESS: ":443"
+      TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS: "true"
+      TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_CERTRESOLVER: "letsencrypt"
+      TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_MAIN: "{{ tls_domain_main }}"
+      TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_SANS: "{{ tls_domain_sans }}"
+      # SSL / Certificate Management
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE: /letsencrypt/acme.json
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER: "{{ le_ca_server }}"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_RESOLVERS: "1.1.1.1"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_PROVIDER: cloudflare
+      CLOUDFLARE_EMAIL: "{{ cf_email | string}}"
+      CLOUDFLARE_API_KEY: "{{ cf_api_key | string}}"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.dashboard.rule: "Host(`traefik.{{ tls_domain_main }}`)"
+      traefik.http.routers.dashboard.service: "api@internal"
+      traefik.http.routers.dashboard.entrypoints: "web-https"
+      traefik.http.routers.dashboard.middlewares: "dashwl"
+      traefik.http.middlewares.dashwl.ipwhitelist.sourcerange: "192.168.0.0/16,10.0.0.0/8"
+      com.centurylinklabs.watchtower.enable: "true"
 
-      volumes:
-        letsencrypt: {}
-
-      networks:
-        web:
-          external: true
-  register: infra
+- name: Deploy Watchtower
+  community.docker.docker_container:
+    name: watchtower
+    image: containrrr/watchtower
+    state: started
+    restart_policy: "unless-stopped"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    env:
+      WATCHTOWER_CLEANUP: "{{ watchtower_cleanup | string }}"
+      WATCHTOWER_LABEL_ENABLE: "{{ watchtower_label_enable | string }}"
+      WATCHTOWER_NO_STARTUP_MESSAGE: "{{ watchtower_no_startup_msg | string }}"
+      WATCHTOWER_POLL_INTERVAL: "{{ watchtower_poll_interval | string }}"
+      WATCHTOWER_SCHEDULE: 0 0 6 * * *
+      WATCHTOWER_NOTIFICATIONS: "{{ watchtower_notification | string }}"
+      WATCHTOWER_NOTIFICATION_URL: "{{ watchtower_notification_url | string }}"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
