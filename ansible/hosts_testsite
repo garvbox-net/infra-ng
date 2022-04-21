@@ -1,11 +1,11 @@
 ## Site Groups - Location-specific groupings
 [testsite]
-docktesto  ansible_host=docktesto.glenside.lan  lxd_docker_host=true
+docker-testsite  ansible_host=docker-testsite.glenside.lan
 k3s-test
 
 ## Functional Groups - role and extra vars
 [docker_host]
-docktesto
+docker-testsite
 
 [k3s_cluster]
 k3s-test  ansible_host=k3s-test.glenside.lan
