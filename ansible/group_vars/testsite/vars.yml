@@ -12,6 +12,6 @@ deploy_apps:
   # - homeassistant
   - whoami
 
-remove_apps:
-  - homeassistant
+# remove_apps:
+#   - homeassistant
 #   - whoami

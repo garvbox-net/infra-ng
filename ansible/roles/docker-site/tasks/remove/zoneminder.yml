@@ -1,0 +1,16 @@
+---
+- name: Remove Zoneminder
+  community.docker.docker_container:
+    name: zoneminder 
+    state: absent
+
+- name: Remove Volumes 
+  community.docker.docker_volume:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - zoneminder_events
+    - zoneminder_images
+    - zoneminder_db
+    - zoneminder_logs
+  when: docker_remove_vols
