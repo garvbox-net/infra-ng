@@ -8,3 +8,20 @@
     k3s_become: true
   roles:
     - role: xanmanning.k3s
+  post_tasks:
+    - name: Pull Kubeconfig
+      run_once: true
+      become: true
+      when: k3s_control_node
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "~/.kube/config"
+        flat: yes
+    - name: Ansible replace string example
+      run_once: true
+      when: k3s_control_node
+      ansible.builtin.replace:
+        path: "~/.kube/config"
+        regexp: '127.0.0.1'
+        replace: "{{ inventory_hostname if ansible_host == 'localhost' else ansible_host }}"
+      delegate_to: localhost
