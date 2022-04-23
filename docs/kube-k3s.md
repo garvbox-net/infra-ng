@@ -159,6 +159,31 @@ To set it up using Helm (see [ref](https://metallb.universe.tf/installation/)):
 The Flux Guide on SOPS is very good and covers everything needed https://fluxcd.io/docs/guides/mozilla-sops/.  
 See the [age](https://fluxcd.io/docs/guides/mozilla-sops/#encrypting-secrets-using-age) guide for use of age
 instead of gpg - much easier. 
+Ultimately went with GPG in the test environment over AGE as had more existing repo in k8s-at-home community using
+ansible and GPG. Some notes:
+* Setup steps:
+  * Created a variable `vault_sops_gpg_key` in the vault for testsite, this is the private key for the GPG setup
+  * Followed the guide and created the SOPS decryption secret manually with kubectl (and added an ansible step to
+    do it during deployment from the vault copy).
+  * Created a manifest file for the discord URL secret (`flux-system/notifications/discord-secrets.yaml`) using the
+    kubectl CLI. Then used sops to encrypt that in place and committed the encrypted version, pushing it up to see what happens.
+* Here I had some issues with the discord notifications secret - flux wasnt decrypting the SOPS content automatically
+  and throwing these errors:
+  ```
+  2022-04-23T20:56:11.017Z error Kustomization/flux-system.flux-system - Reconciliation failed after 686.569067ms, next try in 10m0s Secret/flux-system/discord-url validation error: error decoding from json: illegal base64 data at input byte 3
+  ```
+* After re-reading the docs it made more sense, I had forgot to enable decryption in flux... 
+  The instructions in the guide [here](https://fluxcd.io/docs/guides/mozilla-sops/#configure-in-cluster-secrets-decryption)
+  mentioned to do this with a kustomization on the CLI, but it referred to other git repos so didnt
+  make a lot of sense to do this.  
+  Instead edited `gitk-sync.yaml` to enable decryption as below. Saw others online following this approach too,
+  and it seemed to work after removing and re-adding the notifications secrets to kick it into action.
+```yaml
+  decryption:
+  provider: sops
+  secretRef:
+    name: sops-gpg
+```
 
 
 # GitOps with Flux
