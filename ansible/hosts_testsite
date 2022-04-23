@@ -1,4 +1,4 @@
-## Site Groups - Location-specific groupings
+mmen## Site Groups - Location-specific groupings
 [testsite]
 docker-testsite     ansible_host=docker-testsite.glenside.lan
 k3s-test            ansible_host=k3s-test.glenside.lan
@@ -7,5 +7,18 @@ k3s-test            ansible_host=k3s-test.glenside.lan
 [docker_host]
 docker-testsite
 
-[k3s_cluster]
+# Kubernetes Test cluster(s)
+[k3s_control]
 k3s-test
+
+[k3s_workers]
+# Empty worker group
+
+; * NOTE if adding the k3s groups you must add all three groups to the inventory even if only using one
+; * This is to preserve the ability to do certain tasks on control/workers only
+[k3s_cluster:children]
+k3s_workers
+k3s_control
+
+[k3s_cluster:vars]
+k3s_become=true

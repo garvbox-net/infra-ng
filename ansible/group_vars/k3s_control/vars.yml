@@ -1,0 +1,10 @@
+
+---
+# Disable some Kube components for gitops custom setup
+k3s_server:
+  disable:
+    - traefik
+    - servicelb
+    - metrics-server
+  write-kubeconfig-mode: "0644"
+k3s_control_node: true
