@@ -1,9 +1,11 @@
 ---
-# Customised K3S Deployment on LXD Container
+# Customised K3S Deployment for GitOps
+# Disable core services as we will push them out with customisations on Flux
 k3s_server:
   disable:
     - traefik
     - servicelb
     - coredns
     - metrics-server
-  data-dir: /data/k3s
+# Set this as the master node
+k3s_control_node: true
