@@ -21,8 +21,7 @@
 
   - name: Post-Install Tasks (Master Node Only)
     run_once: true
-    # when: inventory_hostname == groups["k3s_control"][0]
-    delegate_to: localhost
+    when: inventory_hostname == groups["k3s_control"][0]
     tags:
       - bootstrap
     block:
@@ -66,7 +65,20 @@
       tags:
       - sops
 
-    - name: Create secret with SOPS GPG key
+    - name: "Create Flux Namespace: {{ flux_namespace }}"
+      ansible.builtin.shell: >
+        kubectl create namespace {{ flux_namespace }}
+      register: result
+      changed_when:
+      - "result.stdout is search('created')"
+      failed_when:
+      - "result.rc != 0"
+      - "result.stderr is not search('already exists')"
+      tags:
+      - sops
+      - flux
+
+    - name: Create flux infra secret with SOPS GPG key
       ansible.builtin.shell: >
         kubectl create -n {{ flux_namespace }} secret generic sops-gpg
         --namespace=flux-system
@@ -75,9 +87,11 @@
       changed_when:
       - "result.stdout is search('created')"
       failed_when:
+      - "result.rc != 0"
       - "result.stderr is not search('already exists')"
       tags:
       - sops
+      - flux
 
     - name: Check for flux CLI
       ansible.builtin.stat:
@@ -107,7 +121,8 @@
             --branch={{ flux_git_branch }} 
             --path={{ flux_git_path }}
             --namespace={{ flux_namespace }}
+            --token-auth
       environment:
-        - GITLAB_TOKEN="{{ vault_flux_gitlab_token }}"
+        - GITLAB_TOKEN: "{{ vault_flux_gitlab_token }}"
       tags:
       - flux

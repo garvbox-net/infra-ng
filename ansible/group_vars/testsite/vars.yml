@@ -1,6 +1,7 @@
 # testsite non-secret vars
 ---
 site_name: testsite
+cluster_name: alphasite-test
 
 # Traefik Setup
 tls_domain_main: testsite.garvbox.net
