@@ -19,6 +19,14 @@
     tags:
     - install
 
+  - name: Install NFS Server
+    ansible.builtin.apt:
+      name: nfs-server
+      update_cache: yes
+    become: true
+    tags:
+    - install
+
   - name: Post-Install Tasks (Master Node Only)
     run_once: true
     when: inventory_hostname == groups["k3s_control"][0]
