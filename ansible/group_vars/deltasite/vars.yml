@@ -1,0 +1,7 @@
+# Gammasite non-secret vars
+---
+site_name: deltasite
+# Traefik Setup
+tls_domain_main: deltasite.garvbox.net
+tls_domain_sans: "*.deltasite.garvbox.net"
+le_prod: false
