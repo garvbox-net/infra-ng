@@ -8,8 +8,29 @@ DHCP and DNS come from a pi2 in
 ## Docker
 Pi server node - deltapi4
 Running docker-compose, from directories in `~garvin/docker-compose` - one directory for
-each application. e.g. Shinobi, Zoneminder, Unifi
+each application. e.g. Zoneminder, Unifi
 
+**NOTE**: Infra components (traefik etc) have been moved to standard ansible-controlled
+setup using this repository
+
+### Zoneminder Docker Image
+Zoneminder needs to be built for ARM as the docker hub images are x86 only.
+There is a copy of the ZM repo from [here](https://github.com/ZoneMinder/zmdockerfiles) cloned locally on the machine at `~garvin/git/zmdockerfiles`.
+
+From that location you can build using a command like below, note the tags used to identify the image locally, these are re-used with the docker compose setup.
+
+```bash
+$ docker build -t zoneminder-armhf:v1.36 -t zoneminder-armhf:latest -f release/ubuntu20.04/Dockerfile
+```
+
+There is a docker compose file at `~garvin/docker-compose/ZoneMinder` which can be used to bring up ZM. 
+You should be able to build and update fairly non-disruptively as the database etc are all on dedicated volumes.  
+Note that the docker image build isnt aware of updates to the apt repos in docker so you might have
+to delete old images to force a rebuild or use `--no-cache` option to docker build.
+
+TODO: We may be able to improve on this process, a nice setup would be a docker image repo
+hosted somewhere in the infra which we can build working and tested ZM images for Arm on
+and just rely on watchtower for the updates.
 
 ## Cameras
 
