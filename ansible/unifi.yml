@@ -1,8 +1,0 @@
-# Install/Update Unifi Controller
----
-- name: Install & Configure Unifi Controller 
-  hosts: unifi_controllers
-  become: true
-
-  roles:
-     - unifi-controller

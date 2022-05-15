@@ -1,9 +1,10 @@
 ## Site Groups - Location-specific groupings
-[gammasite]
-servapi4
-watcher
+[deltasite]
+deltapi4
+deltanetpi
+
 
 
 ## Functional Groups - role and extra vars
 [docker_host]
-servapi4
+deltapi4
