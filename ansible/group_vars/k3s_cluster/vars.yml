@@ -6,9 +6,12 @@ sops_deb_url: "https://github.com/mozilla/sops/releases/download/v{{ sops_versio
 flux_git_type: gitlab
 flux_git_user: garvbox-iac
 flux_git_repo: gitopsokat
-flux_git_branch: main
+flux_git_branch: "{{ flux_branch | default('main') }}"
 flux_git_path: "clusters/{{ cluster_name }}"
 flux_namespace: flux-system
 
 # Set true with -e option to force flux upgrades
 flux_upgrade: false
+
+# Enable Root escalation
+k3s_become: true

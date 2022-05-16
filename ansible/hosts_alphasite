@@ -1,7 +1,19 @@
-## Site Groups - Location-specific groupings
+; Site Groups - Location-specific groupings
 [alphasite]
-dockraken  ansible_host=dockraken.glenside.lan
+alphasite-prod-node01   ansible_host=alphasite-prod-node01.glenside.lan
 
-## Functional Groups - role and extra vars
-[docker_host]
-dockraken   lxd_docker_host=true
+; Kubernetes cluster(s)
+[k3s_control]
+alphasite-prod-node01
+
+[k3s_workers]
+; Empty worker group
+
+; * NOTE if adding the k3s groups you must add all three groups to the inventory even if only using one
+; * This is to preserve the ability to do certain tasks on control/workers only
+[k3s_cluster:children]
+k3s_workers
+k3s_control
+
+; [k3s_cluster:vars]
+; k3s_become=true

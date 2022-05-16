@@ -2,6 +2,7 @@
 ---
 site_name: testsite
 cluster_name: alphasite-test
+flux_branch: staging
 
 # Traefik Setup
 tls_domain_main: testsite.garvbox.net
