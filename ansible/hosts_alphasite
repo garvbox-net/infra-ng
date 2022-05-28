@@ -1,6 +1,8 @@
 ; Site Groups - Location-specific groupings
 [alphasite]
 alphasite-prod-node01   ansible_host=alphasite-prod-node01.glenside.lan
+alphasite-prod-node02   ansible_host=alphasite-prod-node02.glenside.lan
+alphasite-prod-node03   ansible_host=alphasite-prod-node03.glenside.lan
 
 ; Kubernetes cluster(s)
 [k3s_control]
@@ -8,6 +10,8 @@ alphasite-prod-node01
 
 [k3s_workers]
 ; Empty worker group
+alphasite-prod-node02
+alphasite-prod-node03
 
 ; * NOTE if adding the k3s groups you must add all three groups to the inventory even if only using one
 ; * This is to preserve the ability to do certain tasks on control/workers only

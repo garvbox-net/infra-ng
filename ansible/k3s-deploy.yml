@@ -21,7 +21,7 @@
 
   - name: Install NFS Server
     ansible.builtin.apt:
-      name: nfs-server
+      name: nfs-common
       update_cache: yes
     become: true
     tags:
