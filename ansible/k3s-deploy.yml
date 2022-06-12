@@ -19,9 +19,11 @@
     tags:
     - install
 
-  - name: Install NFS Server
+  - name: Install Storage Client Services
     ansible.builtin.apt:
-      name: nfs-common
+      name:
+        - nfs-common
+        - open-iscsi
       update_cache: yes
     become: true
     tags:
