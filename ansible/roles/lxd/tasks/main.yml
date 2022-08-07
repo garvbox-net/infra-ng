@@ -1,21 +1,22 @@
-
+---
 - name: "Grab Local SSH Key"
-  set_fact:
+  ansible.builtin.set_fact:
     local_ssh_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
   delegate_to: localhost
 
 # Delegate LXD Tasks to LXD Server
-- name: "Create Standardised LXD Container"
+- name: Create Standardised LXD Container
   delegate_to: "{{ lxd_server | default('localhost') }}"
   block:
     - name: Check for existing Container
-      ansible.builtin.command: "lxc info {{inventory_hostname}}"
+      ansible.builtin.command: "lxc info {{ inventory_hostname }}"
       register: cmd_container_exists
       failed_when: false  # step should not fail
 
-    - ansible.builtin.set_fact:
+    - name: Set Container Exists Var
+      ansible.builtin.set_fact:
         container_exists: "{{ cmd_container_exists.rc == 0 }}"
-    
+
     - name: Trigger Container Deletion on recreate
       community.general.lxd_container:
         name: "{{ inventory_hostname }}"
@@ -41,30 +42,29 @@
 
     # Using the lxc CLI we can enable SSH for root user temporarily
     - name: Copy SSH key to remote
-      ansible.builtin.shell: "lxc exec {{ container }} -- sh -c \"mkdir -p /root/.ssh && echo '{{local_ssh_key}}' >> /root/.ssh/authorized_keys\""
+      ansible.builtin.shell: "lxc exec {{ container }} -- sh -c \"mkdir -p /root/.ssh && echo '{{ local_ssh_key }}' >> /root/.ssh/authorized_keys\""
 
 # Set up SSH remote host key in local hosts file
 - name: Set Remote host FQDN
-  set_fact:
+  ansible.builtin.set_fact:
     ssh_fqdn: "{{ inventory_hostname if ansible_host == 'localhost' else ansible_host }}"
 
 - name: Check SSH known_hosts for {{ ssh_fqdn }}
-  local_action: shell ssh-keygen -l -F {{ ssh_fqdn }}
-  register: checkForKnownHostsEntry
+  ansible.builtin.command: ssh-keygen -l -F {{ ssh_fqdn }}
+  register: check_known_hosts
   failed_when: false
   changed_when: false
-  ignore_errors: yes
+  delegate_to: "localhost"
 
 - name: Add {{ ssh_fqdn }} to SSH known hosts automatically
-  when: checkForKnownHostsEntry.rc == 1
-  changed_when: checkForKnownHostsEntry.rc == 1
-  local_action: 
-      module: shell
-      args: ssh-keyscan -H "{{ ssh_fqdn }}" >> $HOME/.ssh/known_hosts
+  when: check_known_hosts.rc == 1
+  changed_when: check_known_hosts.rc == 1
+  ansible.builtin.command: ssh-keyscan -H "{{ ssh_fqdn }}" >> $HOME/.ssh/known_hosts
+  delegate_to: "localhost"
 
 # With the SSH key Deployed we can run with ssh user, making role exec easier
 - name: Run Base Setup Tasks
-  include_role:
+  ansible.builtin.include_role:
     name: base-setup
     apply:
       remote_user: root
@@ -77,5 +77,7 @@
   remote_user: root
 
 - name: Remove SSH Key from root user
-  ansible.builtin.command: "rm -f /root/.ssh/authorized_keys"
+  ansible.builtin.file:
+    path: /root/.ssh/authorized_keys
+    state: absent
   remote_user: root

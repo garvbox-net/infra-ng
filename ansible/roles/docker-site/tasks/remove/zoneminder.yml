@@ -1,10 +1,10 @@
 ---
 - name: Remove Zoneminder
   community.docker.docker_container:
-    name: zoneminder 
+    name: zoneminder
     state: absent
 
-- name: Remove Volumes 
+- name: Remove Volumes
   community.docker.docker_volume:
     name: "{{ item }}"
     state: absent

@@ -1,4 +1,3 @@
-
 ---
 # Disable some Kube components for gitops custom setup
 k3s_server:

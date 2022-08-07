@@ -1,6 +1,6 @@
-
+---
 - name: Deploy Standardised Docker Site and Apps
   hosts: docker_host
-  gather_facts: no
+  gather_facts: false
   roles:
     - docker-site

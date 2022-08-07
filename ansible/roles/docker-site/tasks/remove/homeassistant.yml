@@ -15,7 +15,7 @@
     - homeassistant
     - mosquitto
 
-- name: Remove Volumes 
+- name: Remove Volumes
   community.docker.docker_volume:
     name: "{{ item }}_config"
     state: absent

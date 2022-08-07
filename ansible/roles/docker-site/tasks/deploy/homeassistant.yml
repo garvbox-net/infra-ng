@@ -19,7 +19,7 @@
     state: started
     restart_policy: "unless-stopped"
     ports:
-      -  8123
+      - 8123
     volumes:
       - "homeassistant_config:/config"
       - /etc/localtime:/etc/localtime:ro
@@ -33,15 +33,16 @@
       - name: "ha-internal"
 
 - name: Deploy Proxy-Resistant Initial HA config
-  block:      
+  block:
     - name: Copy Initial HA config
       ansible.builtin.copy:
         src: ha_init_config.yaml
         dest: /tmp/ha_init_config.yaml
+        mode: '0664'
     - name: Backup Running HA config from Container
       ansible.builtin.command:
         "docker cp homeassistant:/config/configuration.yaml /tmp/ha_config_backup.yaml"
-      ignore_errors: true
+      failed_when: false
     - name: Push initial HA config to container
       ansible.builtin.command:
         "docker cp /tmp/ha_init_config.yaml homeassistant:/config/configuration.yaml"
@@ -78,6 +79,9 @@
     regexp: '^#?listener.*'
     line: "listener 1883"
   register: updated_mosquitto_bind
+  notify:
+    - Push Mosquitto config
+    - Restart Mosquitto
 
 - name: Allow Anonymous Connections
   ansible.builtin.lineinfile:
@@ -85,14 +89,6 @@
     regexp: '^#?allow_anonymous.*'
     line: "allow_anonymous true"
   register: updated_mosquitto_anon
-- name: Push Updated Mosquitto config to container
-  ansible.builtin.command:
-    "docker cp /tmp/mosquitto.conf mosquitto:/mosquitto/config/mosquitto.conf"
-  when: updated_mosquitto_bind.changed or updated_mosquitto_anon.changed
-
-- name: restart for initial config
-  community.docker.docker_container:
-    name: mosquitto
-    state: started
-    restart: true
-  when: updated_mosquitto_bind.changed or updated_mosquitto_anon.changed
+  notify:
+    - Push Mosquitto config
+    - Restart Mosquitto

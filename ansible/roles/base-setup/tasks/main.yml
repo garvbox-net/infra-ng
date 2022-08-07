@@ -1,8 +1,7 @@
 # Default Ubuntu Container Setup
 ---
-
 - name: Check if IPv6 proc files exist
-  stat:
+  ansible.builtin.stat:
     path: /proc/sys/net/ipv6/
   register: proc_ipv6
 
@@ -15,11 +14,8 @@
     mode: '0644'
   register: ipv6_sysctl_conf
   when: proc_ipv6.stat.exists and proc_ipv6.stat.isdir
-
-- name: Reload sysctl config
-  ansible.builtin.command:
-    cmd: sysctl -q -f /etc/sysctl.d/99-disable-ipv6.conf
-  when: ipv6_sysctl_conf.changed
+  notify:
+    - Reload sysctl
 
 - name: Create Group for Default User
   ansible.builtin.group:

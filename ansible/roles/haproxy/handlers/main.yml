@@ -1,5 +1,5 @@
 ---
-- name: restart_docker_daemon
+- name: Restart HAproxy
   ansible.builtin.systemd:
-    name: docker
+    name: haproxy
     state: restarted

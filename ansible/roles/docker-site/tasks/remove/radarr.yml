@@ -1,4 +1,4 @@
-
+---
 - name: Set App Name
   ansible.builtin.set_fact:
     xarr_app_name: radarr
@@ -8,7 +8,7 @@
     name: "{{ xarr_app_name }}"
     state: absent
 
-- name: Remove Volumes 
+- name: Remove Volumes
   community.docker.docker_volume:
     name: "{{ xarr_app_name }}_config"
     state: absent

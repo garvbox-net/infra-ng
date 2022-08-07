@@ -1,0 +1,11 @@
+---
+# HomeAssisstant Mosquitto Bounce Handlers
+- name: Push Mosquitto config
+  ansible.builtin.command:
+    "docker cp /tmp/mosquitto.conf mosquitto:/mosquitto/config/mosquitto.conf"
+
+- name: Restart Mosquitto
+  community.docker.docker_container:
+    name: mosquitto
+    state: started
+    restart: true

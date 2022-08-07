@@ -8,131 +8,130 @@
 # - Install SOPS on first control node and configure secrets
 # - Bootstrap flux
 ---
-
 - name: Install K3S to all Nodes
   hosts: k3s_cluster
-  
+
   tasks:
-  - name: Import K3S Installer Role
-    ansible.builtin.import_role:
-      name: xanmanning.k3s
-    tags:
-    - install
-
-  - name: Install Storage Client Services
-    ansible.builtin.apt:
-      name:
-        - nfs-common
-        - open-iscsi
-      update_cache: yes
-    become: true
-    tags:
-    - install
-
-  - name: Post-Install Tasks (Master Node Only)
-    run_once: true
-    when: inventory_hostname == groups["k3s_control"][0]
-    tags:
-      - bootstrap
-    block:
-    - name: "Make kubectl config readable"
-      ansible.builtin.file:
-        path: "/etc/rancher/k3s/k3s.yaml"
-        mode: "0644"
-        state: file
-      become: true
+    - name: Import K3S Installer Role
+      ansible.builtin.import_role:
+        name: xanmanning.k3s
       tags:
-        - kubectl
+        - install
 
-    - name: Make .kube directory if needed
-      ansible.builtin.file:
-        path: "~/.kube"
-        state: directory
-      tags:
-        - kubectl
-
-    - name: "Put kubectl config in default place"
-      ansible.builtin.file:
-        src: "/etc/rancher/k3s/k3s.yaml"
-        dest: "~/.kube/config"
-        state: link
-      tags:
-        - kubectl
-
-    - name: Install SOPS
+    - name: Install Storage Client Services
       ansible.builtin.apt:
-        deb: "{{ sops_deb_url }}"
+        name:
+          - nfs-common
+          - open-iscsi
+        update_cache: true
       become: true
       tags:
-      - sops
+        - install
 
-    - name: Install SOPS GPG key
-      ansible.builtin.shell: >
-        echo "{{ vault_sops_gpg_key }}"| gpg --batch --pinentry-mode loopback --import /dev/stdin
-      register: result
-      changed_when:
-      - "result.stderr is not search('not changed')"
+    - name: Post-Install Tasks (Master Node Only)
+      run_once: true
+      when: inventory_hostname == groups["k3s_control"][0]
       tags:
-      - sops
+        - bootstrap
+      block:
+        - name: "Make kubectl config readable"
+          ansible.builtin.file:
+            path: "/etc/rancher/k3s/k3s.yaml"
+            mode: "0644"
+            state: file
+          become: true
+          tags:
+            - kubectl
 
-    - name: "Create Flux Namespace: {{ flux_namespace }}"
-      ansible.builtin.shell: >
-        kubectl create namespace {{ flux_namespace }}
-      register: result
-      changed_when:
-      - "result.stdout is search('created')"
-      failed_when:
-      - "result.rc != 0"
-      - "result.stderr is not search('already exists')"
-      tags:
-      - sops
-      - flux
+        - name: Make .kube directory if needed
+          ansible.builtin.file:
+            path: "~/.kube"
+            state: directory
+            mode: 0755
+          tags:
+            - kubectl
 
-    - name: Create flux infra secret with SOPS GPG key
-      ansible.builtin.shell: >
-        kubectl create -n {{ flux_namespace }} secret generic sops-gpg
-        --namespace=flux-system
-        --from-literal=sops.asc="{{ vault_sops_gpg_key }}"
-      register: result
-      changed_when:
-      - "result.stdout is search('created')"
-      failed_when:
-      - "result.rc != 0"
-      - "result.stderr is not search('already exists')"
-      tags:
-      - sops
-      - flux
+        - name: "Put kubectl config in default place"
+          ansible.builtin.file:
+            src: "/etc/rancher/k3s/k3s.yaml"
+            dest: "~/.kube/config"
+            state: link
+          tags:
+            - kubectl
 
-    - name: Check for flux CLI
-      ansible.builtin.stat:
-        path: /usr/local/bin/flux
-      register: stat_flux_cli
-      tags:
-      - flux
+        - name: Install SOPS
+          ansible.builtin.apt:
+            deb: "{{ sops_deb_url }}"
+          become: true
+          tags:
+            - sops
 
-    - name: Install Flux
-      ansible.builtin.shell: curl -s https://fluxcd.io/install.sh | bash
-      become: true
-      when: not stat_flux_cli.stat.exists
-      tags:
-      - flux
+        - name: Install SOPS GPG key
+          ansible.builtin.shell: >
+            echo "{{ vault_sops_gpg_key }}"| gpg --batch --pinentry-mode loopback --import /dev/stdin
+          register: result
+          changed_when:
+            - "result.stderr is not search('not changed')"
+          tags:
+            - sops
 
-    - name: "Check flux prerequisites"
-      ansible.builtin.command: flux check --pre
-      changed_when: false
-      tags:
-      - flux
+        - name: "Create Flux Namespace: {{ flux_namespace }}"
+          ansible.builtin.shell: >
+            kubectl create namespace {{ flux_namespace }}
+          register: result
+          changed_when:
+            - "result.stdout is search('created')"
+          failed_when:
+            - "result.rc != 0"
+            - "result.stderr is not search('already exists')"
+          tags:
+            - sops
+            - flux
 
-    - name: Bootstrap Flux
-      ansible.builtin.command: >
-          flux bootstrap {{ flux_git_type }} 
-            --owner={{ flux_git_user }}
-            --repository={{ flux_git_repo }} 
-            --branch={{ flux_git_branch }} 
-            --path={{ flux_git_path }}
-            --namespace={{ flux_namespace }}
-            --token-auth
-      environment:
-        - GITLAB_TOKEN: "{{ vault_flux_gitlab_token }}"
-      tags:
-      - flux
+        - name: Create flux infra secret with SOPS GPG key
+          ansible.builtin.shell: >
+            kubectl create -n {{ flux_namespace }} secret generic sops-gpg
+            --namespace=flux-system
+            --from-literal=sops.asc="{{ vault_sops_gpg_key }}"
+          register: result
+          changed_when:
+            - "result.stdout is search('created')"
+          failed_when:
+            - "result.rc != 0"
+            - "result.stderr is not search('already exists')"
+          tags:
+            - sops
+            - flux
+
+        - name: Check for flux CLI
+          ansible.builtin.stat:
+            path: /usr/local/bin/flux
+          register: stat_flux_cli
+          tags:
+            - flux
+
+        - name: Install Flux
+          ansible.builtin.shell: curl -s https://fluxcd.io/install.sh | bash
+          become: true
+          when: not stat_flux_cli.stat.exists
+          tags:
+            - flux
+
+        - name: "Check flux prerequisites"
+          ansible.builtin.command: flux check --pre
+          changed_when: false
+          tags:
+            - flux
+
+        - name: Bootstrap Flux
+          ansible.builtin.command: >
+            flux bootstrap {{ flux_git_type }} --owner={{ flux_git_user }}
+              --repository={{ flux_git_repo }}
+              --branch={{ flux_git_branch }}
+              --path={{ flux_git_path }}
+              --namespace={{ flux_namespace }}
+              --token-auth
+          environment:
+            GITLAB_TOKEN: "{{ vault_flux_gitlab_token }}"
+          tags:
+            - flux

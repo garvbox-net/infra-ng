@@ -1,7 +1,6 @@
-
-
+---
 - name: Install Docker Python Requirements
-  pip:
+  ansible.builtin.pip:
     name: docker,docker-compose
     state: present
   tags:

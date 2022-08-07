@@ -2,7 +2,7 @@
 ---
 - name: Deploy Whoami
   community.docker.docker_container:
-    name: whoami 
+    name: whoami
     image: containous/whoami
     state: started
     ports:

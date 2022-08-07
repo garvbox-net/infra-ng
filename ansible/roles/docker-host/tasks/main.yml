@@ -1,4 +1,3 @@
-
 # Docker Role to install and configure docker engine and compose anywhere
 # NOTE: use the var docker_network_bridge=false if you wish to force a docker install
 #   without the network bridge, i.e. forcing the use of "hostmode" container networking only
@@ -9,7 +8,7 @@
     name: lxd
     tasks_from: docker-policy
   when: lxd_docker_host | default(false)
-  
+
 - name: Get dpkg Architecture
   ansible.builtin.command:
     cmd: dpkg --print-architecture
@@ -27,14 +26,14 @@
 
 - name: Add specified repository into sources list
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{dpkg_arch.stdout | trim}} signed-by={{ docker_keyring }}] {{ docker_repo_source }} {{ ansible_distribution_release }} stable"
+    repo: "deb [arch={{ dpkg_arch.stdout | trim }} signed-by={{ docker_keyring }}] {{ docker_repo_source }} {{ ansible_distribution_release }} stable"
     filename: docker
     state: present
 
 - name: Install Docker
   ansible.builtin.apt:
     state: latest
-    name: "{{docker_packages}}"
+    name: "{{ docker_packages }}"
   register: installed_docker
 
 - name: Add Admin user to Docker group
@@ -45,7 +44,7 @@
 
 - name: Make Docker CLI plugins directory
   ansible.builtin.file:
-    path: "{{ docker_cli_plugin_dir }}" 
+    path: "{{ docker_cli_plugin_dir }}"
     state: directory
     owner: root
     group: root

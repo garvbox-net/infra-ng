@@ -1,4 +1,4 @@
-
+---
 - name: Configure lxd security policy for Docker Host
   community.general.lxd_container:
     name: "{{ inventory_hostname }}"

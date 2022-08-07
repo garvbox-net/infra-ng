@@ -1,10 +1,10 @@
-
+---
 # Block used for delegation - all this will run using
 - name: Stop and Delete Container '{{ inventory_hostname }}'
-  delegate_to: localhost 
+  delegate_to: localhost
   block:
     - name: Check for existing Container
-      ansible.builtin.command: "lxc info {{inventory_hostname}}"
+      ansible.builtin.command: "lxc info {{ inventory_hostname }}"
       register: cmd_container_exists
       failed_when: false  # step cannot fail - checking resp code below for neater output
 

@@ -1,0 +1,10 @@
+# Skip some commonly used innocent issues
+skip_list:
+  - no-changed-when
+  - command-instead-of-module
+  - package-latest
+
+exclude_paths:
+  - .cache/ # implicit unless exclude_paths is defined in config
+  - files/*.yaml
+  - ${HOME}/.ansible/roles # Dont lint downloaded roles

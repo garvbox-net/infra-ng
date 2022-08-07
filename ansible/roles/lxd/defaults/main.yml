@@ -1,4 +1,3 @@
-
 # Recreate option for automatic delete and recreate
 lxd_recreate: false
 
