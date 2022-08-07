@@ -11,7 +11,7 @@
 - name: Deploy Traefik
   community.docker.docker_container:
     name: traefik
-    image: traefik:v2.6
+    image: traefik:v2.8
     state: started
     restart_policy: "unless-stopped"
     ports:
