@@ -1,0 +1,83 @@
+---
+# Ansible-Templated Docker Compose file for Traefik
+# Last Deployed: {{ ansible_date_time.date }}
+#
+# NOTE: If this is changed it may be overwritten by automated updates
+#
+version: "3.2"
+services:
+  traefik:
+    image: traefik:v2.8
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    networks:
+      - web
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    environment:
+      # General Traefik Settings
+      TRAEFIK_API: "true"
+      TRAEFIK_LOG_LEVEL: "info"
+      TRAEFIK_PROVIDERS_DOCKER: "true"
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: web
+      # Entrypoints
+      TRAEFIK_ENTRYPOINTS_web-http_ADDRESS: ":80"
+      TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_TO: "web-https"
+      TRAEFIK_ENTRYPOINTS_web-http_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: "https"
+      TRAEFIK_ENTRYPOINTS_web-https_ADDRESS: ":443"
+      TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS: "true"
+      TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_CERTRESOLVER: "letsencrypt"
+      TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_MAIN: "{{ tls_domain_main }}"
+      TRAEFIK_ENTRYPOINTS_web-https_HTTP_TLS_DOMAINS_0_SANS: "{{ tls_domain_sans }}"
+      # SSL / Certificate Management
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_EMAIL: "support@garvbox.net"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE: /letsencrypt/acme.json
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_CASERVER: "{{ le_ca_server }}"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_RESOLVERS: "1.1.1.1"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_PROVIDER: cloudflare
+      # Disabled Propagation check as it is unreliable in some networks (esp behind adblockers)
+      # USe a 5 minute wait before notifying ACME instead
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_DELAYBEFORECHECK: "15"
+      TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_DISABLEPROPAGATIONCHECK: "true"
+      CLOUDFLARE_EMAIL: "{{ cf_email | string }}"
+      CLOUDFLARE_API_KEY: "{{ cf_api_key | string }}"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.dashboard.rule: "Host(`traefik.{{ tls_domain_main }}`)"
+      traefik.http.routers.dashboard.service: "api@internal"
+      traefik.http.routers.dashboard.entrypoints: "web-https"
+      traefik.http.routers.dashboard.middlewares: "dashwl"
+      traefik.http.middlewares.dashwl.ipwhitelist.sourcerange: "192.168.0.0/16,10.0.0.0/8"
+      com.centurylinklabs.watchtower.enable: "true"
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: "unless-stopped"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_CLEANUP: "{{ watchtower_cleanup | string }}"
+      WATCHTOWER_LABEL_ENABLE: "{{ watchtower_label_enable | string }}"
+      WATCHTOWER_NO_STARTUP_MESSAGE: "{{ watchtower_no_startup_msg | string }}"
+      WATCHTOWER_POLL_INTERVAL: "{{ watchtower_poll_interval | string }}"
+      WATCHTOWER_SCHEDULE: 0 0 6 * * *
+      WATCHTOWER_NOTIFICATIONS: "{{ watchtower_notification | string }}"
+      WATCHTOWER_NOTIFICATION_URL: "{{ watchtower_notification_url | string }}"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+
+networks:
+  web:
+    external: true
+
+volumes:
+  traefik_letsencrypt:
