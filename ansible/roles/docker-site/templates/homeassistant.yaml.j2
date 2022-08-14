@@ -57,6 +57,35 @@ services:
     networks:
       - web
 
+  influxdb:
+    image: "influxdb:1.8"
+    restart: unless-stopped
+    ports:
+      - 8086
+    volumes:
+      - influx-data:/var/lib/influxdb
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - ha-internal
+
+  grafana:
+    image: "grafana/grafana:latest"
+    restart: unless-stopped
+    ports:
+      - 3000
+    volumes:
+      - grafana-data:/var/lib/grafana
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.grafana.rule: "Host(`grafana.{{ tls_domain_main }}`)"
+      traefik.http.routers.grafana.middlewares: "grafanainternal"
+      traefik.http.middlewares.grafanainternal.ipwhitelist.sourcerange: "192.168.0.0/16,10.0.0.0/8"
+    networks:
+      - ha-internal
+      - web
+
 networks:
   web:
     external: true
@@ -65,3 +94,5 @@ networks:
 volumes:
   ha-config:
   mosquitto-config:
+  influx-data:
+  grafana-data:

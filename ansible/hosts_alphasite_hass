@@ -1,0 +1,7 @@
+## Site Groups - Location-specific groupings
+[alphasite_hass]
+homeassistant01     ansible_host=homeassistant01.glenside.lan
+
+## Functional Groups - role and extra vars
+[docker_host]
+homeassistant01

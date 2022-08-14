@@ -1,0 +1,12 @@
+# alphasite-hass non-secret vars
+---
+site_name: alphasite-hass
+
+# Traefik Setup
+tls_domain_main: alphasite-hass.garvbox.net
+tls_domain_sans: "*.alphasite-hass.garvbox.net"
+le_prod: true
+
+deploy_apps:
+  - homeassistant
+  # - grafana

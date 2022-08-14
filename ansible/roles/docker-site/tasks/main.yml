@@ -6,7 +6,6 @@
   tags:
     - client
 
-
 - name: Include Site Infra Tasks
   include_tasks:
     file: infra.yml
