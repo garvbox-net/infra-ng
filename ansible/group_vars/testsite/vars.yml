@@ -11,8 +11,8 @@ tls_domain_sans: "*.testsite.garvbox.net"
 # le_prod: true
 
 deploy_apps:
-  # - homeassistant
-  - whoami
+  - homeassistant
+  # - whoami
 
 # remove_apps:
 #   - homeassistant

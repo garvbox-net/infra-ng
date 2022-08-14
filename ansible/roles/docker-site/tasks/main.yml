@@ -16,6 +16,15 @@
   tags:
     - infra
 
+- name: Setup Remote Ansible directories - apps
+  ansible.builtin.file:
+    path: "{{ compose_tgt_dir }}/{{ item }}"
+    state: "directory"
+    mode: 0755
+  loop: "{{ deploy_apps | default([]) }}"
+  tags:
+    - apps
+
 - name: Include Site App Removal Tasks
   include_tasks:
     file: "remove/{{ item }}.yml"

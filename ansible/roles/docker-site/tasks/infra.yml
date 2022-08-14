@@ -19,7 +19,6 @@
     src: infra.yaml.j2
     dest: "{{ compose_tgt_dir }}/infra/docker-compose.yaml"
     mode: 0644
-    backup: true
 
 - name: Bring up Infra Compose Project
   community.docker.docker_compose:

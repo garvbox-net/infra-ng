@@ -1,0 +1,67 @@
+# Ansible-Templated Docker Compose file for Homeassistant
+# Last Deployed: {{ ansible_date_time.date }}
+#
+# NOTE: If this is changed it may be overwritten by automated updates
+#
+services:
+  homeassistant:
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    restart: unless-stopped
+    ports:
+      - 8123
+    volumes:
+      - ha-config:/config
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.homeassistant.rule: "Host(`homeassistant.{{ tls_domain_main }}`)"
+      traefik.http.routers.homeassistant.entrypoints: web-https
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - web
+      - ha-internal
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    ports:
+      - 1883:1883
+      - 9001:9001
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mosquitto-config:/mosquitto/config
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - ha-internal
+
+  codeserver:
+    image: "lscr.io/linuxserver/code-server:latest"
+    restart: unless-stopped
+    ports:
+      - 8443:8443
+    volumes:
+      - ha-config:/config
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      DEFAULT_WORKSPACE: "/config"
+      PUID: "{{ media_user_uid | default(1000) }}"
+      PGID: "{{ media_user_gid | default(1000) }}"
+      TZ: "Europe/Dublin"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.codeserver.rule: "Host(`ha-config.{{ tls_domain_main }}`)"
+      traefik.http.routers.codeserver.middlewares: "csinternal"
+      traefik.http.middlewares.csinternal.ipwhitelist.sourcerange: "192.168.0.0/16,10.0.0.0/8"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
+  ha-internal: # Internal Network for Mosquitto and HA
+
+volumes:
+  ha-config:
+  mosquitto-config:

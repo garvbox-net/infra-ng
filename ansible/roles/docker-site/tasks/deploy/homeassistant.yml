@@ -2,35 +2,21 @@
 # NOTE: Configs are only pushed on initial deployment to avoid
 #   potential for overwriting setups
 ---
-- name: Create HomeAssistant Internal Network
-  community.docker.docker_network:
-    name: "ha-internal"
-    state: present
-
 - name: Check if Homeassistant data exists
   community.docker.docker_volume_info:
-    name: homeassistant_config
+    name: homeassistant_ha-config
   register: ha_vol_check
 
-- name: Deploy Homeassistant
-  community.docker.docker_container:
-    name: homeassistant
-    image: "ghcr.io/home-assistant/home-assistant:stable"
-    state: started
-    restart_policy: "unless-stopped"
-    ports:
-      - 8123
-    volumes:
-      - "homeassistant_config:/config"
-      - /etc/localtime:/etc/localtime:ro
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.homeassistant.rule: "Host(`homeassistant.{{ tls_domain_main }}`)"
-      traefik.http.routers.homeassistant.entrypoints: web-https
-      com.centurylinklabs.watchtower.enable: "true"
-    networks:
-      - name: "web"
-      - name: "ha-internal"
+- name: Deploy Homeassistant Compose File
+  ansible.builtin.template:
+    src: homeassistant.yaml.j2
+    dest: "{{ compose_tgt_dir }}/homeassistant/docker-compose.yaml"
+    mode: 0644
+
+- name: Bring up Homeassistant Compose Project
+  community.docker.docker_compose:
+    project_src: "{{ compose_tgt_dir }}/homeassistant"
+    state: present
 
 - name: Deploy Proxy-Resistant Initial HA config
   block:
@@ -41,37 +27,21 @@
         mode: '0664'
     - name: Backup Running HA config from Container
       ansible.builtin.command:
-        "docker cp homeassistant:/config/configuration.yaml /tmp/ha_config_backup.yaml"
+        "docker cp homeassistant_homeassistant_1:/config/configuration.yaml /tmp/ha_config_backup.yaml"
       failed_when: false
     - name: Push initial HA config to container
       ansible.builtin.command:
-        "docker cp /tmp/ha_init_config.yaml homeassistant:/config/configuration.yaml"
+        "docker cp /tmp/ha_init_config.yaml homeassistant_homeassistant_1:/config/configuration.yaml"
     - name: restart for initial config
       community.docker.docker_container:
-        name: homeassistant
+        name: homeassistant_homeassistant_1
         state: started
         restart: true
   when: not ha_vol_check.exists
 
-- name: Deploy Mosquitto
-  community.docker.docker_container:
-    name: mosquitto
-    image: eclipse-mosquitto:2.0
-    state: started
-    restart_policy: "unless-stopped"
-    ports:
-      - 1883:1883
-      - 9001:9001
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - mosquitto_config:/mosquitto/config
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
-    networks:
-      - name: "ha-internal"
 - name: Copy Running Mosqutto Config
   ansible.builtin.command:
-    "docker cp mosquitto:/mosquitto/config/mosquitto.conf /tmp/mosquitto.conf"
+    "docker cp homeassistant_mosquitto_1:/mosquitto/config/mosquitto.conf /tmp/mosquitto.conf"
 
 - name: Bind to all IPs port 1883
   ansible.builtin.lineinfile:
