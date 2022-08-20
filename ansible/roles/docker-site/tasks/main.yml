@@ -14,6 +14,7 @@
         - infra
   tags:
     - infra
+  when: deploy_traefik or deploy_watchtower
 
 - name: Setup Remote Ansible directories - apps
   ansible.builtin.file:

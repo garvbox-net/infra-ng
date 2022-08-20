@@ -3,7 +3,11 @@
 compose_tgt_dir: "{{ ansible_user_dir }}/docker"
 docker_remove_vols: false
 
+# Traefik Defaults
+deploy_traefik: true
+
 # Watchtower Defaults
+deploy_watchtower: true
 watchtower_no_startup_msg: true
 watchtower_label_enable: true
 watchtower_cleanup: true

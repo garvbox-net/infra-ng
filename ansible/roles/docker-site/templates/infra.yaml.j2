@@ -6,6 +6,7 @@
 #
 version: "3.2"
 services:
+{% if deploy_traefik %}
   traefik:
     image: traefik:v2.8
     restart: unless-stopped
@@ -57,7 +58,8 @@ services:
       traefik.http.routers.dashboard.middlewares: "dashwl"
       traefik.http.middlewares.dashwl.ipwhitelist.sourcerange: "192.168.0.0/16,10.0.0.0/8"
       com.centurylinklabs.watchtower.enable: "true"
-
+{% endif %}
+{% if deploy_watchtower %}
   watchtower:
     image: containrrr/watchtower
     restart: "unless-stopped"
@@ -74,10 +76,12 @@ services:
       WATCHTOWER_NOTIFICATION_URL: "{{ watchtower_notification_url | string }}"
     labels:
       com.centurylinklabs.watchtower.enable: "true"
-
+{% endif %}
 networks:
   web:
     external: true
 
+{% if deploy_traefik %}
 volumes:
   traefik_letsencrypt:
+{% endif %}
