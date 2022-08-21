@@ -1,0 +1,28 @@
+---
+# Install and Set up basic telegraf config
+
+- name: Telegraf repository key
+  ansible.builtin.apt_key:
+    url: https://repos.influxdata.com/influxdb.key
+    keyring: /etc/apt/trusted.gpg.d/telegraf.gpg
+    state: present
+
+- name: Telegraf repository
+  ansible.builtin.apt_repository:
+    repo: "deb https://repos.influxdata.com/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: telegraf
+  register: repo_telegraf
+  notify:
+    - Update Apt Cache"
+
+- name: Telegraf packages
+  ansible.builtin.apt:
+    name:
+      - telegraf
+    state: present
+  register: install_telegraf
+
+# TODO: Add setups for:
+#   - lm-sensors package
+#   - config file setup

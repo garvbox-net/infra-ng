@@ -1,0 +1,9 @@
+# HomeAssistant and Mosquitto deployment
+# NOTE: Configs are only pushed on initial deployment to avoid
+#   potential for overwriting setups
+---
+
+- name: Bring Down Monitoring Compose Project
+  community.docker.docker_compose:
+    project_src: "{{ compose_tgt_dir }}/monitoring"
+    state: absent

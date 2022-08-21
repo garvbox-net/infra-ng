@@ -1,0 +1,35 @@
+# Ansible-Templated Docker Compose file for Monitoring Services
+# Last Deployed: {{ ansible_date_time.date }}
+#
+# NOTE: If this is changed it may be overwritten by automated updates
+#
+services:
+  influxdb:
+    image: "influxdb:1.8"
+    restart: unless-stopped
+    ports:
+      - 8086:8086
+    volumes:
+      - influx-data:/var/lib/influxdb
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - monitoring
+  grafana:
+    image: "grafana/grafana:latest"
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana-data:/var/lib/grafana
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - monitoring
+
+networks:
+  monitoring: # Internal Network for Monitoring Support Services
+
+volumes:
+  influx-data:
+  grafana-data:

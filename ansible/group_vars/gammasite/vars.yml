@@ -7,6 +7,8 @@ deploy_traefik: false
 # tls_domain_main: gammasite.garvbox.net
 # tls_domain_sans: "*.gammasite.garvbox.net"
 # le_prod: true
+deploy_apps:
+  - monitoring
 
 cluster_name: gammasite-prod
 flux_branch: main
