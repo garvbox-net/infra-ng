@@ -17,6 +17,11 @@
   notify:
     - Reload sysctl
 
+- name: Install ZSH
+  ansible.builtin.apt:
+    name: zsh
+    state: present
+
 - name: Create Group for Default User
   ansible.builtin.group:
     name: "{{ admin_user_name }}"
@@ -31,4 +36,4 @@
     append: true
     password: "{{ admin_user_pass_enc }}"
     create_home: true
-    shell: /bin/bash
+    shell: /bin/zsh

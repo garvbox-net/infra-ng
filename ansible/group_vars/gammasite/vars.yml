@@ -10,3 +10,8 @@ deploy_traefik: false
 
 cluster_name: gammasite-prod
 flux_branch: main
+
+
+admin_user_name: garvin
+admin_user_uid: 1666
+admin_user_pass_enc: $6$pMM5fEvPfO05XkKj$RDrqKW7YSoGRM7L1ScOhdYhT16zq2IqMLANH9qnLmVwlhOAR/zhJcRIUldI7Zrel0g/IOd4p.QZ5bpODRMMgO0
