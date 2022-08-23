@@ -15,3 +15,6 @@ flux_upgrade: false
 
 # Enable Root escalation
 k3s_become: true
+
+# Get gitlab token from Vault
+flux_gitlab_token: "{{ vault_flux_gitlab_token }}"

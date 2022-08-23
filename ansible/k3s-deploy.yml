@@ -68,10 +68,10 @@
 
         - name: Install SOPS GPG key
           ansible.builtin.shell: >
-            echo "{{ vault_sops_gpg_key }}"| gpg --batch --pinentry-mode loopback --import /dev/stdin
+            echo "{{ vault_sops_gpg_key }}" | gpg --batch --pinentry-mode loopback --import /dev/stdin
           register: result
           changed_when:
-            - "result.stderr is not search('not changed')"
+            - result.stderr is not search('not changed')
           tags:
             - sops
 
@@ -80,10 +80,10 @@
             kubectl create namespace {{ flux_namespace }}
           register: result
           changed_when:
-            - "result.stdout is search('created')"
+            - result.stdout is search('created')
           failed_when:
-            - "result.rc != 0"
-            - "result.stderr is not search('already exists')"
+            - result.rc != 0
+            - result.stderr is not search('already exists')
           tags:
             - sops
             - flux
@@ -95,10 +95,10 @@
             --from-literal=sops.asc="{{ vault_sops_gpg_key }}"
           register: result
           changed_when:
-            - "result.stdout is search('created')"
+            - result.stdout is search('created')
           failed_when:
-            - "result.rc != 0"
-            - "result.stderr is not search('already exists')"
+            - result.rc != 0
+            - result.stderr is not search('already exists')
           tags:
             - sops
             - flux
@@ -132,6 +132,6 @@
               --namespace={{ flux_namespace }}
               --token-auth
           environment:
-            GITLAB_TOKEN: "{{ vault_flux_gitlab_token }}"
+            GITLAB_TOKEN: "{{ flux_gitlab_token }}"
           tags:
             - flux
