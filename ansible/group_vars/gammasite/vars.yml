@@ -10,6 +10,9 @@ deploy_traefik: false
 deploy_apps:
   - monitoring
 
+# Grafana not needed in monitoring stack - runs on kube
+deploy_monitoring_grafana: false
+
 cluster_name: gammasite-prod
 flux_branch: main
 

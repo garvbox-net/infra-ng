@@ -6,6 +6,9 @@ docker_remove_vols: false
 # Traefik Defaults
 deploy_traefik: true
 
+# App Defaults
+deploy_monitoring_grafana: true
+
 # Watchtower Defaults
 deploy_watchtower: true
 watchtower_no_startup_msg: true
