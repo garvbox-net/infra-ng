@@ -10,3 +10,5 @@ le_prod: true
 deploy_apps:
   - homeassistant
   # - grafana
+
+deploy_traefik: true
