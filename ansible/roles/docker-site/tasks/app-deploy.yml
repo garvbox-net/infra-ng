@@ -1,0 +1,11 @@
+---
+- name: Deploy {{ app_name }} Compose File
+  ansible.builtin.template:
+    src: "{{ app_name }}.yaml.j2"
+    dest: "{{ compose_tgt_dir }}/{{ app_name }}/docker-compose.yaml"
+    mode: 0644
+
+- name: Bring up {{ app_name }} Compose Project
+  community.docker.docker_compose:
+    project_src: "{{ compose_tgt_dir }}/{{ app_name }}"
+    state: present

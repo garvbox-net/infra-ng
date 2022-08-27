@@ -3,6 +3,10 @@
 alphasite-prod-node01   ansible_host=alphasite-prod-node01.glenside.lan
 alphasite-prod-node02   ansible_host=alphasite-prod-node02.glenside.lan
 alphasite-prod-node03   ansible_host=alphasite-prod-node03.glenside.lan
+gitea                   ansible_host=gitea.glenside.lan
+
+[docker_host]
+gitea
 
 ; Kubernetes cluster(s)
 [k3s_control]

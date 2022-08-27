@@ -1,0 +1,5 @@
+---
+- name: Bring Down Monitoring Compose Project
+  community.docker.docker_compose:
+    project_src: "{{ compose_tgt_dir }}/{{ app_name }}"
+    state: absent

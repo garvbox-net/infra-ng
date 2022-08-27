@@ -27,20 +27,24 @@
 
 - name: Include Site App Removal Tasks
   include_tasks:
-    file: "remove/{{ item }}.yml"
+    file: "app-remove.yml"
     apply:
+      vars:
+        app_name: "{{ item }}"
       tags:
         - apps
-  loop: "{{remove_apps | default([])}}"
+  loop: "{{ remove_apps | default([]) }}"
   tags:
     - apps
 
 - name: Include Site App Deployment Tasks
   include_tasks:
-    file: "deploy/{{ item }}.yml"
+    file: "app-deploy.yml"
     apply:
+      vars:
+        app_name: "{{ item }}"
       tags:
         - apps
-  loop: "{{deploy_apps | default([])}}"
+  loop: "{{ deploy_apps | default([]) }}"
   tags:
     - apps

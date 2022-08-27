@@ -1,0 +1,7 @@
+---
+# Gitea Docker Server Config
+deploy_apps:
+  - gitea
+deploy_traefik: false
+
+gitea_pg_password: "{{ vault_gitea_pg_password }}"
