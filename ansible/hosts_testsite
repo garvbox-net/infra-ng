@@ -1,15 +1,15 @@
 ## Site Groups - Location-specific groupings
 [testsite]
-docker-testsite     ansible_host=docker-testsite.glenside.lan
-k3s-test            ansible_host=k3s-test.glenside.lan
+servapi4
 
 ## Functional Groups - role and extra vars
 [docker_host]
-docker-testsite
+servapi4
 
 # Kubernetes Test cluster(s)
 [k3s_control]
-k3s-test
+# NOTE Running k3d - must be fired up to work
+servapi4
 
 [k3s_workers]
 # Empty worker group

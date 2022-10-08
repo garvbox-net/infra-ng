@@ -1,7 +1,9 @@
 # Supporting App Versions and Settings for K3S Cluster Management
 ---
 sops_version: "3.7.2"
-sops_deb_url: "https://github.com/mozilla/sops/releases/download/v{{ sops_version }}/sops_{{ sops_version }}_amd64.deb"
+
+sops_arch: "{{'arm64' if ansible_architecture == 'aarch64' else 'amd64'}}"
+sops_deb_url: "https://github.com/mozilla/sops/releases/download/v{{ sops_version }}/sops_{{ sops_version }}_{{ sops_arch }}.deb"
 
 flux_git_type: gitlab
 flux_git_user: garvbox-iac
