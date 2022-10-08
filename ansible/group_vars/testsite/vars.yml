@@ -1,7 +1,7 @@
 # testsite non-secret vars
 ---
 site_name: testsite
-cluster_name: alphasite-test
+cluster_name: testsite
 flux_branch: staging
 
 # Traefik Setup
