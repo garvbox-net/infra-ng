@@ -11,8 +11,26 @@ The clusters are configured with Flux as documented [below](#gitops-with-flux). 
 details are recorded here as things can change and its easiest just to see that repo for
 the current state.
 
+## Gammasite
 
-# Test Environment setup
+Runs on: `gammatron`  
+This is the main prod cluster, a single-node beefy machine with lots of local storage.
+Running a single node is not ideal but it does minimise overhead and the local storage is very
+fast, with a decent CPU and Nvidia GTX 1070 for plex. It has good memory too (32G) and pretty
+power efficient. See below for details on the gpu [setup](#nvidia-gpu)
+
+## Testsite
+
+Runs on: `servapi4`  
+Setup is usually powered down and is a `k3d` cluster. To start it, on servapi4
+
+It uses the `staging` branch of the gitops cluster as it is only for testing major config changes
+e.g. load balancer setup, major config rollouts to multiple services etc.  
+To start it run the following:
+    $ k3d cluster start testsite
+
+
+# Environment setup
 
 The easiest way to test is with K3D as its a one-liner to get up and running. Testing on LXD is viable
 also with some shenanigans to get it work as below.
@@ -113,6 +131,40 @@ multiple entrypoints on traefik. An alternative is to use MetalLB to assign LAN 
 To set it up using Helm see [ref](https://metallb.universe.tf/installation/). This is automatically configured
 on the gitops repo, see the config there for reference. Manual setup steps are no longer documented here
 as they get out of date quick.
+
+
+## Nvidia GPU
+
+Kubernetes allows you to treat a GPU as a pod resource and pass it in, as detailed in the official 
+[docs](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/). This is pushing the edge of what you should
+be doing with kubernetes but we arent here to make sensible decisions!
+
+The nVidia device plugin [docs](https://github.com/NVIDIA/k8s-device-plugin#preparing-your-gpu-nodes) also help here, however
+see the below info as some of the nvidia stuff makes assumptions about setting default devices that dont work well
+on the K3S environment.
+
+This [comment](https://github.com/k3s-io/k3s/issues/4391#issuecomment-1233314825) from one of the K3S devs was key in understanding the setup.
+Basically K3S will automatically detect the nvidia container runtime but you need to ensure to set up the `RuntimeClass` in
+kubernetes to connect it. No messing about with config.toml for containerd needed.
+
+Setup Steps:
+* Add nvidia-container-toolkit repository: 
+  ```bash
+  distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+  curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | sudo apt-key add -
+  curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | sudo tee /etc/apt/sources.list.d/libnvidia-container.list
+  ```
+* Update apt and install nvidia drivers, tools and container runtime
+  ```bash
+  sudo apt update && sudo apt install nvidia-headless-515-server nvidia-utils-515-server nvidia-container-toolkit
+  ```
+* Reboot to load nvidia driver. It would be a good idea to disable k3s here, stop it and run the `k3s-killall.sh` script
+  to avoid needlessly starting up the cluster if you have issues with the nvidia drivers
+* Check the nvidia driver is working with `sudo nvidia-smi` which should show the GPU details
+* Check the nvidia container runtime works with `nvidia-container-cli info` which should also show GPU details if things are working
+
+At this point the machine is prepped and you can start up k3s if you disabled it. You can check that k3s detected the GPU
+after it has started with `sudo grep nvidia /var/lib/rancher/k3s/agent/etc/containerd/config.toml`
 
 
 # GitOps with Flux
