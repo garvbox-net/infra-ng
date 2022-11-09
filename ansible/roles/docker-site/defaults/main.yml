@@ -14,6 +14,6 @@ deploy_watchtower: true
 watchtower_no_startup_msg: true
 watchtower_label_enable: true
 watchtower_cleanup: true
-watchtower_poll_interval: 60
 watchtower_notification: shoutrrr
 watchtower_notification_url: ''
+watchtower_schedule: "0 0 6 * * *"

@@ -70,8 +70,7 @@ services:
       WATCHTOWER_CLEANUP: "{{ watchtower_cleanup | string }}"
       WATCHTOWER_LABEL_ENABLE: "{{ watchtower_label_enable | string }}"
       WATCHTOWER_NO_STARTUP_MESSAGE: "{{ watchtower_no_startup_msg | string }}"
-      WATCHTOWER_POLL_INTERVAL: "{{ watchtower_poll_interval | string }}"
-      WATCHTOWER_SCHEDULE: 0 0 6 * * *
+      WATCHTOWER_SCHEDULE: "{ watchtower_schedule | string }"
       WATCHTOWER_NOTIFICATIONS: "{{ watchtower_notification | string }}"
       WATCHTOWER_NOTIFICATION_URL: "{{ watchtower_notification_url | string }}"
     labels:
