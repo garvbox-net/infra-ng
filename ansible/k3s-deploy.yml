@@ -132,6 +132,6 @@
               --namespace={{ flux_namespace }}
               --token-auth
           environment:
-            GITLAB_TOKEN: "{{ flux_gitlab_token }}"
+            "{{ 'GITLAB_TOKEN' if flux_git_type == 'gitlab' else 'GITHUB_TOKEN' }}": "{{ flux_git_token }}"
           tags:
             - flux
