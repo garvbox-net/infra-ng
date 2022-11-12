@@ -9,6 +9,7 @@ deploy_traefik: false
 # le_prod: true
 deploy_apps:
   - monitoring
+  - unifi-controller
 
 # Grafana not needed in monitoring stack - runs on kube
 deploy_monitoring_grafana: false
