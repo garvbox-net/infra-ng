@@ -94,3 +94,16 @@ Steps to create:
   * Go to "Access Lists" and create an "allow" list for the gammasite network range.
     * Access list name: `VPN LANs` (so that we can add more ranges for other vpn tunnels)
     * Networks: `192.168.0.0/24`
+
+
+## OpenWRT Build
+
+OpenWRT Custom build request
+https://firmware-selector.openwrt.org/?version=22.03.2&target=bcm27xx%2Fbcm2711&id=rpi-4
+
+Added the folllowing packages:
+* Drivers required by https://wiki.dfrobot.com/Compute_Module_4_IoT_Router_Board_Mini_SKU_DFR0767
+  `kmod-r8169 kmod-usb-dwc2 bcm27xx-userland`
+
+* Custom packages for setup
+  `luci luci-app-adblock luci-app-ddns luci-app-firewall luci-app-opkg luci-app-statistics luci-app-openvpn luci-app-opkg ddns-scripts-cloudflare openvpn-openssl kmod-hwmon-gpiofan`

@@ -1,28 +1,24 @@
 ########################################################################
 # vscode
 .vscode/
-
-
-########################################################################
 # Ansible
 *.retry
 *.original
 *.tmp
 *.bkp
+# Misc
+tmp/
 
 
 ########################################################################
-# Gitignore Python Content
 # https://github.com/github/gitignore/blob/master/Python.gitignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
 # C extensions
 *.so
-
 # Distribution / packaging
 .Python
 build/
@@ -42,17 +38,14 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
-
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
-
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -67,10 +60,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-
 # Sphinx documentation
 docs/_build/
-
 # Environments
 .env
 .venv
