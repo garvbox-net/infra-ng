@@ -136,3 +136,10 @@
             GITHUB_TOKEN: "{{ flux_git_token }}"
           tags:
             - flux
+
+    - name: Configure K3S Backups
+      ansible.builtin.import_role:
+        name: backups
+      become: true
+      tags:
+        - backups
