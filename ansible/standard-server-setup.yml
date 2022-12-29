@@ -5,8 +5,3 @@
   roles:
     - base-setup
     - base-user-home
-
-- name: Configure backups
-  hosts: backups
-  roles:
-    - backups
