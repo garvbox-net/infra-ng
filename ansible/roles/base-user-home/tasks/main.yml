@@ -1,5 +1,4 @@
 ---
-# Set up OMZsh and any other prefs
 - name: Check if Oh My zsh is installed
   ansible.builtin.stat:
     path: .oh-my-zsh
@@ -7,7 +6,7 @@
 
 - name: Define OMZ Installed var
   ansible.builtin.set_fact:
-    omz_installed: "{{ omz_installed_dir.stat.isdir is not defined }}"
+    omz_installed: "{{ omz_installed_dir.stat.isdir is defined }}"
 
 - name: Get oh-my-zsh
   ansible.builtin.get_url:
@@ -30,9 +29,11 @@
   ansible.builtin.git:
     repo: "{{ item.repo }}"
     dest: ".oh-my-zsh/custom/{{ item.dir }}"
+    version: master
+  loop: "{{ zsh_plugins_install }}"
 
 - name: Enable OMZ Plugins
   ansible.builtin.lineinfile:
     path: "~/.zshrc"
     regexp: '^plugins=\([\w\s]+\)$'
-    line: "plugins=({{zsh_plugins_enable}})"
+    line: "plugins=({{ zsh_plugins_enable }})"
