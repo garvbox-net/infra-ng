@@ -79,7 +79,16 @@ def check_snap_lv(vg, snap_name):
 
 def create_snap(vg, lv, snap, size):
     return _run_cmd(
-        ["lvcreate", "--snapshot", "--name", snap, "--size", size, f"{vg}/{lv}"],
+        [
+            "lvcreate",
+            "--yes",
+            "--snapshot",
+            "--name",
+            snap,
+            "--size",
+            size,
+            f"{vg}/{lv}",
+        ],
         check=True,
     )
 
@@ -95,7 +104,7 @@ def mount_snap(vg, snap_lv, mountpoint):
             f"Something is already mounted at {mountpoint}, possible previous failed cleanup"
         )
     return _run_cmd(
-        ["mount", os.path.join("/dev/mapper", vg, snap_lv), mountpoint], check=True
+        ["mount", os.path.join("/dev", vg, snap_lv), mountpoint], check=True
     )
 
 
@@ -107,7 +116,7 @@ def unmount_snap(mountpoint):
 
 
 def remove_snap(vg, snap_lv):
-    return _run_cmd(["lvremove", f"{vg}/{snap_lv}"], check=True)
+    return _run_cmd(["lvremove", "--yes", f"{vg}/{snap_lv}"], check=True)
 
 
 def _get_mounted(mountpoint):
