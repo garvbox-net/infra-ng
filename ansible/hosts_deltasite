@@ -1,8 +1,14 @@
-## Site Groups - Location-specific groupings
-[deltasite]
-deltapi4
-deltanetpi
+---
+deltasite:
+  hosts:
+    deltapi4:
+    deltanetpi:
 
-## Functional Groups - role and extra vars
-[docker_host]
-deltapi4
+docker_host:
+  hosts:
+    deltapi4:
+  vars:
+    tls_domain_main: deltasite.garvbox.net
+    tls_domain_sans: "*.deltasite.garvbox.net"
+    le_prod: true
+    ansible_become_pass: "{{ vault_become_pass }}"

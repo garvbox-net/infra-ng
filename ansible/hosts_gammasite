@@ -1,24 +1,38 @@
-; Site Groups - Location-specific groupings
-[gammasite]
-servapi4
-gammatron
+---
+gammasite:
+  hosts:
+    servapi4:
+    gammatron:
+  vars:
+    cluster_name: gammasite-prod
+    flux_branch: main
+    admin_user_name: garvin
+    admin_user_uid: 1666
+    admin_user_pass_enc: $6$pMM5fEvPfO05XkKj$RDrqKW7YSoGRM7L1ScOhdYhT16zq2IqMLANH9qnLmVwlhOAR/zhJcRIUldI7Zrel0g/IOd4p.QZ5bpODRMMgO0
+    ansible_become_pass: "{{ vault_become_pass }}"
 
-; Functional Groups - role and extra vars
-[docker_host]
-servapi4
+docker_host:
+  hosts:
+    servapi4:
+      deploy_apps:
+        - monitoring
+        - unifi-controller
+      deploy_monitoring_grafana: false # Grafana not needed in monitoring stack - runs on kube
 
-[backups]
-gammatron
+backups:
+  hosts:
+    gammatron:
 
-; Kubernetes cluster(s)
-[k3s_control]
-gammatron
+k3s_cluster:
+  children:
+    k3s_workers:
+    k3s_control:
+  # NOTE if adding the k3s groups you must add all three groups to the inventory even if
+  # only using one. This is to preserve the ability to do certain tasks on control/workers only
+  vars:
+    cluster_name: gammasite-prod
+    flux_branch: main
 
-[k3s_workers]
-; Empty worker group
-
-; * NOTE if adding the k3s groups you must add all three groups to the inventory even if only using one
-; * This is to preserve the ability to do certain tasks on control/workers only
-[k3s_cluster:children]
-k3s_workers
-k3s_control
+k3s_control:
+  hosts:
+    gammatron:

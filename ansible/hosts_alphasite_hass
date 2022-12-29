@@ -1,7 +1,15 @@
-## Site Groups - Location-specific groupings
-[alphasite_hass]
-homeassistant01     ansible_host=homeassistant01.glenside.lan
-
-## Functional Groups - role and extra vars
-[docker_host]
-homeassistant01
+---
+alphasite_hass:
+  hosts:
+    homeassistant01:
+      ansible_host: homeassistant01.glenside.lan
+docker_host:
+  hosts:
+    homeassistant01:
+      deploy_apps:
+        - homeassistant
+      deploy_traefik: true
+  vars:
+    tls_domain_main: alphasite-hass.garvbox.net
+    tls_domain_sans: "*.alphasite-hass.garvbox.net"
+    le_prod: true

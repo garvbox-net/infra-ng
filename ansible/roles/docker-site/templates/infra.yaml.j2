@@ -48,8 +48,8 @@ services:
       # USe a 5 minute wait before notifying ACME instead
       TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_DELAYBEFORECHECK: "15"
       TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_DNSCHALLENGE_DISABLEPROPAGATIONCHECK: "true"
-      CLOUDFLARE_EMAIL: "{{ cf_email | string }}"
-      CLOUDFLARE_API_KEY: "{{ cf_api_key | string }}"
+      CLOUDFLARE_EMAIL: "{{ vault_cf_email | string }}"
+      CLOUDFLARE_API_KEY: "{{ vault_cf_api_key | string }}"
     labels:
       traefik.enable: "true"
       traefik.http.routers.dashboard.rule: "Host(`traefik.{{ tls_domain_main }}`)"
