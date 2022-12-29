@@ -1,0 +1,6 @@
+---
+# Global Defaults pulled from vault etc
+admin_user_name: "{{ vault_admin_user_name }}"
+admin_user_uid: "{{ vault_admin_user_uid }}"
+admin_user_pass_enc: "{{ vault_admin_user_pass_enc }}"
+ansible_become_pass: "{{ vault_become_pass }}"
