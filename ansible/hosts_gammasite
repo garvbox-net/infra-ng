@@ -1,12 +1,14 @@
-## Site Groups - Location-specific groupings
+; Site Groups - Location-specific groupings
 [gammasite]
 servapi4
 gammatron
 
-## Functional Groups - role and extra vars
+; Functional Groups - role and extra vars
 [docker_host]
 servapi4
 
+[backups]
+gammatron
 
 ; Kubernetes cluster(s)
 [k3s_control]

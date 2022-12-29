@@ -1,0 +1,17 @@
+---
+# Deploy Admin scripts and Cron jobs
+- name: Make Backup Scripts directory
+  ansible.builtin.file:
+    path: "{{ backup_script_store }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy Backup Scripts
+  ansible.builtin.copy:
+    dest: "{{ backup_script_store }}/"
+    src: scripts/
+    owner: root
+    group: root
+    mode: '0644'

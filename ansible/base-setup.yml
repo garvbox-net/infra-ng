@@ -1,7 +1,0 @@
-# Setup Home dir just the way I like it
----
-
-- name: Set up New server basic environment
-  hosts: all
-  roles:
-    - base-user-home

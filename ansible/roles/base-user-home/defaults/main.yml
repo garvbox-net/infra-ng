@@ -1,0 +1,8 @@
+---
+zsh_plugins_install:
+  - repo: https://github.com/zsh-users/zsh-autosuggestions.git
+    dir: zsh-autosuggestions
+  - repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+    dir: zsh-syntax-highlighting
+
+zsh_plugins_enable: git docker kubectl zsh-autosuggestions zsh-syntax-highlighting

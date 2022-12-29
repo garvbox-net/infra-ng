@@ -1,0 +1,3 @@
+---
+backup_script_store: /var/lib/backups
+backup_user: root

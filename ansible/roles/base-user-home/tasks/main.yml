@@ -1,23 +1,38 @@
 ---
 # Set up OMZsh and any other prefs
+- name: Check if Oh My zsh is installed
+  ansible.builtin.stat:
+    path: .oh-my-zsh
+  register: omz_installed_dir
+
+- name: Define OMZ Installed var
+  ansible.builtin.set_fact:
+    omz_installed: "{{ omz_installed_dir.stat.isdir is not defined }}"
 
 - name: Get oh-my-zsh
   ansible.builtin.get_url:
     url: https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
     dest: /tmp/ohmyzsh_install.zsh
     mode: 0755
-
-- name: Check if Oh My zsh is installed
-  ansible.builtin.stat:
-    path: .oh-my-zsh
-  register: omz_installed
+  when: not omz_installed
 
 - name: Install Oh My zsh
   ansible.builtin.command: /tmp/ohmyzsh_install.zsh --unattended
-  when: omz_installed.stat.isdir is not defined
+  when: not omz_installed
 
 - name: Set Theme 'lukerandall'
   ansible.builtin.lineinfile:
     path: "~/.zshrc"
     regexp: '^ZSH_THEME='
     line: ZSH_THEME="lukerandall"
+
+- name: Install OMZ Plugins
+  ansible.builtin.git:
+    repo: "{{ item.repo }}"
+    dest: ".oh-my-zsh/custom/{{ item.dir }}"
+
+- name: Enable OMZ Plugins
+  ansible.builtin.lineinfile:
+    path: "~/.zshrc"
+    regexp: '^plugins=\([\w\s]+\)$'
+    line: "plugins=({{zsh_plugins_enable}})"
