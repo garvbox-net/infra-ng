@@ -15,3 +15,21 @@
     owner: root
     group: root
     mode: '0755'
+
+- name: Add cron webhook URL
+  ansible.builtin.cron:
+    cron_file: backup_data
+    env: true
+    name: WEBHOOK_URL
+    job: "{{ backup_notification_url }}"
+    user: root
+  when: backup_cmd is defined
+
+- name: Schedule backup command
+  ansible.builtin.cron:
+    cron_file: backup_data
+    name: "Snapshot Backup"
+    special_time: "{{ backup_time | default('daily') }}"
+    user: root
+    job: "{{ backup_script_store }}/{{ backup_cmd }}"
+  when: backup_cmd is defined

@@ -18,6 +18,9 @@ docker_host:
 backups:
   hosts:
     gammatron:
+      backup_notification_url: "{{ vault_infra_notification_url }}"
+      backup_time: "weekly"
+      backup_cmd: "backup_lv.py -t /datapool/backups/k3s -v ubuntu-vg -l k3s-lv -s 10G -p k3s/storage -m /mnt -f /var/log/snap_backup.log"
 
 k3s_cluster:
   children:
