@@ -13,11 +13,6 @@ _truthy_strs = ["true", "1", "y", "yes"]
 DEBUG = os.getenv("DEBUG", "").lower() in _truthy_strs
 DRY_RUN = os.getenv("DRY_RUN", "").lower() in _truthy_strs
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-logging.basicConfig(
-    level=logging.DEBUG if DEBUG else logging.INFO,
-    format="[%(asctime)s] [%(levelname)8s] [%(funcName)12.12s()] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 
 
 class BackupError(RuntimeError):
@@ -44,7 +39,15 @@ def main():
         help="Base path for mounting snapshot. Actual mount point will be <mount-base>/<snap>",
     )
     p.add_argument("-c", "--cleanup", action="store_true", help="Run cleanup only")
+    p.add_argument("-f", "--log-file", help="Output Log file")
     opts = p.parse_args()
+
+    logging.basicConfig(
+        level=logging.DEBUG if DEBUG else logging.INFO,
+        format="[%(asctime)s] [%(levelname)8s] [%(funcName)12.12s()] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        filename=opts.log_file,
+    )
 
     if not DRY_RUN and os.geteuid() != 0:
         raise PermissionError("Root permissions needed for LVM Snapshots")
