@@ -43,6 +43,7 @@ def main():
         default="/mnt",
         help="Base path for mounting snapshot. Actual mount point will be <mount-base>/<snap>",
     )
+    p.add_argument("-c", "--cleanup", action="store_true", help="Run cleanup only")
     opts = p.parse_args()
 
     if not DRY_RUN and os.geteuid() != 0:
@@ -52,6 +53,12 @@ def main():
     date_str = date.today().strftime("%y_%m_%d")
     snap_mount_dir = os.path.join(opts.mount_base, snap_lv)
     backup_file_name = os.path.join(opts.tgt, f"backup_{opts.lv}_{date_str}.gz")
+
+    if opts.cleanup:
+        logging.info("Running Snapshot and MP Cleanup")
+        unmount_snap(snap_mount_dir)
+        remove_snap(opts.vg, snap_lv)
+        return 0
 
     if not os.path.isdir(snap_mount_dir):
         logging.info("Creating backup mount dir: " + snap_mount_dir)
@@ -142,7 +149,7 @@ def _get_mounted(mountpoint):
     logging.debug(f"Checking for mount point: {mountpoint}")
     with open("/proc/mounts", "r") as f:
         for line in f.readlines():
-            if line[1] == mountpoint:
+            if line.split()[1] == mountpoint:
                 return True
     return False
 
