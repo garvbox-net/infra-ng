@@ -5,15 +5,23 @@ from datetime import date
 from argparse import ArgumentParser
 import subprocess
 import logging
+import platform
+
+import requests
 
 _truthy_strs = ["true", "1", "y", "yes"]
 DEBUG = os.getenv("DEBUG", "").lower() in _truthy_strs
 DRY_RUN = os.getenv("DRY_RUN", "").lower() in _truthy_strs
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 logging.basicConfig(
     level=logging.DEBUG if DEBUG else logging.INFO,
     format="[%(asctime)s] [%(levelname)8s] [%(funcName)12.12s()] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+
+
+class BackupError(RuntimeError):
+    """Generic Backup Failure"""
 
 
 def main():
@@ -38,7 +46,7 @@ def main():
     opts = p.parse_args()
 
     if not DRY_RUN and os.geteuid() != 0:
-        raise PermissionError("Root permissions needed for ZFS Snapshots")
+        raise PermissionError("Root permissions needed for LVM Snapshots")
 
     snap_lv = opts.lv + "-backup"
     date_str = date.today().strftime("%y_%m_%d")
@@ -53,9 +61,9 @@ def main():
     if check_snap_res.returncode == 5 or DRY_RUN:
         logging.info("No Existing Snapshot found - continuing with backup")
     elif check_snap_res.returncode == 0:
-        raise RuntimeError(f"Snapshot {snap_lv} already exists - manual cleanup needed")
+        raise BackupError(f"Snapshot {snap_lv} already exists - manual cleanup needed")
     else:
-        raise RuntimeError(f"Error getting Snapshot: {check_snap_res.returncode}")
+        raise BackupError(f"Error getting Snapshot: {check_snap_res.returncode}")
 
     create_snap(opts.vg, opts.lv, snap_lv, opts.size)
     try:
@@ -100,7 +108,7 @@ def tar_backup(mountpoint, sub_path, target):
 
 def mount_snap(vg, snap_lv, mountpoint):
     if _get_mounted(mountpoint):
-        raise RuntimeError(
+        raise BackupError(
             f"Something is already mounted at {mountpoint}, possible previous failed cleanup"
         )
     return _run_cmd(
@@ -117,6 +125,17 @@ def unmount_snap(mountpoint):
 
 def remove_snap(vg, snap_lv):
     return _run_cmd(["lvremove", "--yes", f"{vg}/{snap_lv}"], check=True)
+
+
+def send_discord_notification(message):
+    if WEBHOOK_URL is None:
+        logging.info("Webhook not set - skipping notification")
+        return
+    logging.info("Sending Discord Notification")
+    requests.post(
+        WEBHOOK_URL,
+        json={"username": platform.node(), "content": f"Backup Error:\n{message}"},
+    )
 
 
 def _get_mounted(mountpoint):
@@ -137,7 +156,10 @@ def _run_cmd(cmd_args, **kwargs):
 
 
 if __name__ == "__main__":
+    res = 1
     try:
-        sys.exit(main())
+        res = main()
     except Exception as e:
+        send_discord_notification(e)
         logging.exception(e)
+    sys.exit(res)
