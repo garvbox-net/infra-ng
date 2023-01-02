@@ -28,7 +28,7 @@
 - name: Install OMZ Plugins
   ansible.builtin.git:
     repo: "{{ item.repo }}"
-    dest: ".oh-my-zsh/custom/{{ item.dir }}"
+    dest: ".oh-my-zsh/custom/plugins/{{ item.dir }}"
     version: master
   loop: "{{ zsh_plugins_install }}"
 
