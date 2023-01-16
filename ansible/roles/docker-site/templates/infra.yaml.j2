@@ -8,12 +8,11 @@ version: "3.2"
 services:
 {% if deploy_traefik %}
   traefik:
-    image: traefik:v2.8
+    image: traefik:v2.9
     restart: unless-stopped
     ports:
       - 80:80
       - 443:443
-      - 8080:8080
     networks:
       - web
     volumes:
