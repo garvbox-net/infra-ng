@@ -3,5 +3,5 @@
 - name: Set up Server standardised Environment
   hosts: all
   roles:
-    #- base-setup
+    - base-setup
     - base-user-home
