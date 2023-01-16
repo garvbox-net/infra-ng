@@ -8,6 +8,7 @@ deltasite:
 docker_host:
   hosts:
     deltapi4:
+      deploy_traefik: true
   vars:
     tls_domain_main: deltasite.garvbox.net
     tls_domain_sans: "*.deltasite.garvbox.net"
