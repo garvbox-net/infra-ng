@@ -42,28 +42,12 @@
     groups: docker
     append: true
 
-- name: Make Docker CLI plugins directory
-  ansible.builtin.file:
-    path: "{{ docker_cli_plugin_dir }}"
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-
-- name: "Install Docker-compose - Version: {{ docker_compose_version }}, Arch: {{ ansible_architecture }}"
-  ansible.builtin.get_url:
-    url: https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-{{ ansible_architecture }}
-    dest: "{{ docker_cli_plugin_dir }}/docker-compose"
-    mode: '0755'
-    owner: root
-    group: root
-
 - name: Create docker etc directory
   ansible.builtin.file:
     path: /etc/docker
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
     state: directory
   register: create_dir
   when: not docker_network_bridge
@@ -74,6 +58,6 @@
     src: docker_daemon.json
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   when: not docker_network_bridge
   notify: restart_docker_daemon
