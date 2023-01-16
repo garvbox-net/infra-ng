@@ -3,6 +3,7 @@ deltasite:
   hosts:
     deltapi4:
     deltanetpi:
+    kraken:
 
 docker_host:
   hosts:
