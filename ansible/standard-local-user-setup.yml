@@ -1,0 +1,7 @@
+---
+
+- name: Set up Server standardised Environment
+  hosts: localhost
+  connection: local
+  roles:
+    - base-user-home
