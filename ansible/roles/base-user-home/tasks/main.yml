@@ -1,7 +1,7 @@
 ---
 - name: Check if Oh My zsh is installed
   ansible.builtin.stat:
-    path: .oh-my-zsh
+    path: ~/.oh-my-zsh
   register: omz_installed_dir
 
 - name: Define OMZ Installed var
@@ -22,13 +22,13 @@
 - name: Set Theme 'lukerandall'
   ansible.builtin.lineinfile:
     path: "~/.zshrc"
-    regexp: '^ZSH_THEME='
+    regexp: "^ZSH_THEME="
     line: ZSH_THEME="lukerandall"
 
 - name: Install OMZ Plugins
   ansible.builtin.git:
     repo: "{{ item.repo }}"
-    dest: ".oh-my-zsh/custom/plugins/{{ item.dir }}"
+    dest: "~/.oh-my-zsh/custom/plugins/{{ item.dir }}"
     version: master
   loop: "{{ zsh_plugins_install }}"
 
