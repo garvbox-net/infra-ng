@@ -17,3 +17,8 @@ watchtower_cleanup: true
 watchtower_notification: shoutrrr
 watchtower_notification_url: "{{ vault_watchtower_notification_url }}"
 watchtower_schedule: "0 0 6 * * *"
+
+# Zoneminder Defaults
+zm_db_pass: zoneminder
+zm_db_root_pass: zoneminder_root
+zm_data_path: /data

@@ -1,0 +1,50 @@
+# Ansible-Templated Docker Compose file for Zoneminder
+# Last Deployed: {{ ansible_date_time.date }}
+#
+# NOTE: If this is changed it may be overwritten by automated updates
+#
+version: "3.2"
+services:
+  zoneminder:
+    image: ghcr.io/zoneminder-containers/zoneminder-base:latest
+    environment:
+      TZ: Europe/Dublin
+      MYSQL_USER: zoneminder
+      MYSQL_PASSWORD: {{ zm_db_pass }}
+    volumes:
+      - {{ zm_data_path }}/config:/config
+      - {{ zm_data_path }}/data:/data
+      - {{ zm_data_path }}/log:/log
+      - type: tmpfs
+        target: /dev/shm
+        tmpfs:
+          size: 1000000000
+    networks:
+      - web
+      - zm-internal
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.homeassistant.rule: "Host(`zoneminder.{{ tls_domain_main }}`)"
+      traefik.http.routers.homeassistant.entrypoints: web-https
+  db:
+    image: mariadb:10.9
+    restart: unless-stopped
+    networks:
+      - zm-internal
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: {{ zm_db_root_pass }}
+      MYSQL_USER: zoneminder
+      MYSQL_PASSWORD: {{ zm_db_pass }}
+      MYSQL_DATABASE: zm
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+networks:
+  web:
+    external: true
+  zm-internal:
+volumes:
+  mysql-data:
