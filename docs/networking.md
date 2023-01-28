@@ -1,8 +1,9 @@
 # Networking
+
 Documentation on network designs and configuration steps.
 
-
 ## Site to Site Connections
+
 Initially OpenVPN was set up with the previous client access main VPN on Packetron, but its client-server design
 leaves some issues with routing, so second attempt (below) uses a P2P VPN config.
 
@@ -13,17 +14,18 @@ make it work properly. Briefly looked at IPsec tunnel but that is really hardcor
 left it off for now. May revisit.
 
 ### OpenVPN Tunnel Experimental Setup
+
 **Objective**: connect two sites via a seamless tunnel so that machines in one can
 easily connect to resources in the other without needing VPN software on the clients.
 
 Notes on the setup:
+
 * `Alphasite` is the "core" site here, running the OpenVPN server
   * Router: `packetron` - running PFsense
   * Domain: `glenside.lan`
 * `Gammasite` is an "edge" site
   * Router: `cm-routey` - running OpenWRT
   * Domain: `gammasite.lan`
-
 
 ```mermaid
 flowchart LR;
@@ -36,8 +38,8 @@ flowchart LR;
     end;
 ```
 
-
 Steps to create:
+
 * Created certificates on `packetron` as per document:
   * Server Cert: `P2P VPN Server Cert`
   * Client Cert: `Gammasite P2P VPN`
@@ -52,6 +54,7 @@ Steps to create:
   * Compression: `Adaptive LZO Compression` - set for easier match on OpenWRT
   * Gateway creation: IPv4Only - less cruft!
 * Created VPN config on packetron, using the below file (this took a while to build out)
+
   ```
   config openvpn 'packetron_p2p'
           option dev 'tun'
@@ -74,6 +77,7 @@ Steps to create:
           option tls_auth '/etc/openvpn/Packetron_P2P_TLS.key'
           option key_direction '1'
   ```
+
   At this point the vpn connection was up (with `/etc/init.d/openvpn restart`)
 * Created a new firewall zone in the openWRT UI (Network->Firewall->Add)
   * Named this alphasite as it represents the target site zone
@@ -95,15 +99,20 @@ Steps to create:
     * Access list name: `VPN LANs` (so that we can add more ranges for other vpn tunnels)
     * Networks: `192.168.0.0/24`
 
-
 ## OpenWRT Build
 
 OpenWRT Custom build request
-https://firmware-selector.openwrt.org/?version=22.03.2&target=bcm27xx%2Fbcm2711&id=rpi-4
+<https://firmware-selector.openwrt.org/?version=22.03.2&target=bcm27xx%2Fbcm2711&id=rpi-4>
 
 Added the folllowing packages:
-* Drivers required by https://wiki.dfrobot.com/Compute_Module_4_IoT_Router_Board_Mini_SKU_DFR0767
+
+* Drivers required by <https://wiki.dfrobot.com/Compute_Module_4_IoT_Router_Board_Mini_SKU_DFR0767>
   `kmod-r8169 kmod-usb-dwc2 bcm27xx-userland`
 
 * Custom packages for setup
-  `luci luci-app-adblock luci-app-ddns luci-app-firewall luci-app-opkg luci-app-statistics luci-app-openvpn luci-app-opkg ddns-scripts-cloudflare openvpn-openssl kmod-hwmon-gpiofan`
+
+```
+  luci luci-app-adblock luci-app-ddns luci-app-firewall luci-app-opkg luci-app-statistics luci-app-openvpn luci-app-opkg
+  ddns-scripts-cloudflare openvpn-openssl
+  collectd-mod-dns collectd-mod-thermal
+```
