@@ -1,0 +1,12 @@
+[Unit]
+Description=Hacky Dell Fan Control Hack
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /usr/local/sbin/dell-temp-control.py --module {{ temp_module }} --sensor "{{ temp_sensor }}"
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

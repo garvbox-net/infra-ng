@@ -1,0 +1,8 @@
+---
+
+- name: Set up Server standardised Environment
+  hosts: localhost
+  connection: local
+  become: true
+  roles:
+    - dell-desktop
