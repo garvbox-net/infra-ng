@@ -1,0 +1,23 @@
+---
+- name: Copy Temp Control Script
+  ansible.builtin.copy:
+    dest: "/usr/local/sbin/"
+    src: scripts/dell-temp-control.py
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy Temp control Service
+  ansible.builtin.template:
+    src: templates/dell-temp-control.service.j2
+    dest: /etc/systemd/system/dell-temp-control.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Start Temp Control Service
+  ansible.builtin.systemd:
+    name: dell-temp-control
+    enabled: true
+    daemon_reload: true
+    state: restarted
