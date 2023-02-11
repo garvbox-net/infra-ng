@@ -39,6 +39,87 @@ class FanState(Enum):
     SYSTEM = 3
 
 
+def main():
+    p = ArgumentParser()
+    p.add_argument("--module", required=True, help="hwmon module name (e.g. coretemp)")
+    p.add_argument(
+        "--interval",
+        type=float,
+        default=1,
+        help="Interval between fan speed checks (in seconds) (Default: %(default)s)",
+    )
+    p.add_argument(
+        "--sensor",
+        required=True,
+        help="Temp sensor Name regex (e.g. 'Package id \\d+')",
+    )
+    p.add_argument(
+        "--thresholds",
+        required=False,
+        default="40,60",
+        help="Set fan speed thresholds (Default: %(default)s)",
+    )
+    opts = p.parse_args()
+
+    # Set up logger, stripped well back for systemd unit which has timestamps in it
+    if os.getenv("DEBUG"):
+        log_lvl = logging.DEBUG
+        log_fmt = "[%(asctime)s] [%(levelname)8s] [%(funcName)24.24s()] %(message)s"
+    else:
+        log_lvl = logging.INFO
+        log_fmt = "[%(levelname)8s] %(message)s"
+    logging.basicConfig(level=log_lvl, format=log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
+
+    module_path = get_hwmon_module(opts.module)
+    logging.info(f"Monitor Module path: {module_path}")
+    sensor = get_temp_sensor(module_path, "Package id 0")
+    logging.info(
+        f"Found Temp sensor: '{sensor.label}' -> reading: {sensor.read_temp() / 1000}C"
+    )
+    thresholds = tuple(int(t) * 1000 for t in opts.thresholds.split(","))
+    logging.info(f"Using temp thresholds: {thresholds}")
+    last_state_requested = None
+    while True:
+        try:
+            last_state_requested = fancontrol(sensor, thresholds, last_state_requested)
+        except Exception as e:
+            # Catch any exceptions reading files etc, allowing to run forever
+            if isinstance(e, KeyboardInterrupt):
+                logging.info("Stopping with ctrl+c")
+                break
+            logging.exception(e)
+        sleep(opts.interval)
+    return 0
+
+
+def fancontrol(
+    sensor: TempSensor,
+    thresholds: tuple[int, int],
+    last_state_requested: Optional[FanState],
+):
+    """Simple threshold based temp controller
+
+    Provided lower,upper threshold can set the fan speed to one of 3 levels
+    if temp < lower threshold - set to minimum
+    if lower < temp < upper - set to mid
+    if temp > upper - set to max
+    """
+    fan_state = get_fan_state()
+    temp = sensor.read_temp()
+    logging.debug(f"Running Fan control: {fan_state=}, {temp=}")
+    # NOTE: i8kfan reports weird fan states, the checks below are experimentally evaluated,
+    # but the target fan states should be correctly named
+    if temp < thresholds[0] and fan_state != FanState.LOW:
+        last_state_requested = set_fan_state(FanState.OFF, last_state_requested)
+    elif thresholds[1] > temp > thresholds[0] and fan_state != FanState.UNKNOWN:
+        last_state_requested = set_fan_state(FanState.LOW, last_state_requested)
+    elif temp > thresholds[1] and fan_state != FanState.HIGH:
+        last_state_requested = set_fan_state(FanState.HIGH, last_state_requested)
+    else:
+        logging.debug("No Fan speed changes needed")
+    return last_state_requested
+
+
 def get_hwmon_module(module_name: str) -> Path:
     """Read hwmon module names and find the path for desired one
 
@@ -105,87 +186,6 @@ def set_fan_state(
     res = subprocess.run(cmd, check=True, capture_output=True, text=True)
     logging.debug(f"i8kfan output: {res.stdout.strip()}")
     return requested_fan_state
-
-
-def fancontrol(
-    sensor: TempSensor,
-    thresholds: tuple[int, int],
-    last_state_requested: Optional[FanState],
-):
-    """Simple threshold based temp controller
-
-    Provided lower,upper threshold can set the fan speed to one of 3 levels
-    if temp < lower threshold - set to minimum
-    if lower < temp < upper - set to mid
-    if temp > upper - set to max
-    """
-    fan_state = get_fan_state()
-    temp = sensor.read_temp()
-    logging.debug(f"Running Fan control: {fan_state=}, {temp=}")
-    # NOTE: i8kfan reports weird fan states, the checks below are experimentally evaluated,
-    # but the target fan states should be correctly named
-    if temp < thresholds[0] and fan_state != FanState.LOW:
-        last_state_requested = set_fan_state(FanState.OFF, last_state_requested)
-    elif thresholds[1] > temp > thresholds[0] and fan_state != FanState.UNKNOWN:
-        last_state_requested = set_fan_state(FanState.LOW, last_state_requested)
-    elif temp > thresholds[1] and fan_state != FanState.HIGH:
-        last_state_requested = set_fan_state(FanState.HIGH, last_state_requested)
-    else:
-        logging.debug("No Fan speed changes needed")
-    return last_state_requested
-
-
-def main():
-    p = ArgumentParser()
-    p.add_argument("--module", required=True, help="hwmon module name (e.g. coretemp)")
-    p.add_argument(
-        "--interval",
-        type=float,
-        default=1,
-        help="Interval between fan speed checks (in seconds) (Default: %(default)s)",
-    )
-    p.add_argument(
-        "--sensor",
-        required=True,
-        help="Temp sensor Name regex (e.g. 'Package id \\d+')",
-    )
-    p.add_argument(
-        "--thresholds",
-        required=False,
-        default="40,60",
-        help="Set fan speed thresholds (Default: %(default)s)",
-    )
-    opts = p.parse_args()
-
-    # Set up logger, stripped well back for systemd unit which has timestamps in it
-    if os.getenv("DEBUG"):
-        log_lvl = logging.DEBUG
-        log_fmt = "[%(asctime)s] [%(levelname)8s] [%(funcName)24.24s()] %(message)s"
-    else:
-        log_lvl = logging.INFO
-        log_fmt = "[%(levelname)8s] %(message)s"
-    logging.basicConfig(level=log_lvl, format=log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
-
-    module_path = get_hwmon_module(opts.module)
-    logging.info(f"Monitor Module path: {module_path}")
-    sensor = get_temp_sensor(module_path, "Package id 0")
-    logging.info(
-        f"Found Temp sensor: '{sensor.label}' -> reading: {sensor.read_temp() / 1000}C"
-    )
-    thresholds = tuple(int(t) * 1000 for t in opts.thresholds.split(","))
-    logging.info(f"Using temp thresholds: {thresholds}")
-    last_state_requested = None
-    while True:
-        try:
-            last_state_requested = fancontrol(sensor, thresholds, last_state_requested)
-        except Exception as e:
-            # Catch any exceptions reading files etc, allowing to run forever
-            if isinstance(e, KeyboardInterrupt):
-                logging.info("Stopping with ctrl+c")
-                break
-            logging.exception(e)
-        sleep(opts.interval)
-    return 0
 
 
 if __name__ == "__main__":
