@@ -248,7 +248,7 @@ def set_fan_state(
             "not requesting duplicate change"
         )
         return last_fan_state
-    logging.debug(f"Setting Fan speed to {requested_fan_state.name}")
+    logging.info(f"Setting Fan speed to {requested_fan_state.name}")
     cmd = [I8KFAN, "-", str(requested_fan_state.value)]
     logging.debug(f"Running command: {' '.join(cmd)}")
     if DRY_RUN:
