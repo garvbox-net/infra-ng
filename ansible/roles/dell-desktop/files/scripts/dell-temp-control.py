@@ -10,14 +10,20 @@ import re
 import subprocess
 import sys
 from argparse import ArgumentParser
+from collections import deque
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from statistics import mean
 from time import sleep
-from typing import Optional
+from typing import Optional, Sequence
 
 HWMON_BASE = "/sys/class/hwmon"
 I8KFAN = "/usr/bin/i8kfan"
+UNSET_TEMP = -100
+TEMP_HIST = 5
+TEMP_WEIGHT_FACTOR = 5
+DRY_RUN = False
 
 
 @dataclass
@@ -29,6 +35,17 @@ class TempSensor:
 
     def read_temp(self) -> int:
         return int(self.input.read_text().strip())
+
+
+@dataclass
+class Thresholds:
+    lower: int
+    upper: int
+    buffer: int
+
+    @staticmethod
+    def from_input(lower, upper, buffer) -> "Thresholds":
+        return Thresholds(*(int(inp * 1000) for inp in (lower, upper, buffer)))
 
 
 class FanState(Enum):
@@ -54,10 +71,34 @@ def main():
         help="Temp sensor Name regex (e.g. 'Package id \\d+')",
     )
     p.add_argument(
-        "--thresholds",
-        required=False,
-        default="40,60",
-        help="Set fan speed thresholds (Default: %(default)s)",
+        "--threshold-lower",
+        "-l",
+        dest="lower",
+        type=int,
+        default=40,
+        help="Set fan speed lower threshold (Default: %(default)s)",
+    )
+    p.add_argument(
+        "--threshold-upper",
+        "-u",
+        dest="upper",
+        type=int,
+        default=60,
+        help="Set fan speed upper threshold (Default: %(default)s)",
+    )
+    p.add_argument(
+        "--threshold-buffer",
+        "-b",
+        dest="buffer",
+        type=int,
+        default=5,
+        help="Threshold buffer (for debouncing) (Default: %(default)s)",
+    )
+    p.add_argument(
+        "--dry-run",
+        "-d",
+        action="store_true",
+        help="Dry Run - do not change fan speeds (reccomend debug logging)",
     )
     opts = p.parse_args()
 
@@ -70,18 +111,29 @@ def main():
         log_fmt = "[%(levelname)8s] %(message)s"
     logging.basicConfig(level=log_lvl, format=log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
 
+    if opts.dry_run:
+        global DRY_RUN
+        DRY_RUN = opts.dry_run
+
     module_path = get_hwmon_module(opts.module)
     logging.info(f"Monitor Module path: {module_path}")
     sensor = get_temp_sensor(module_path, "Package id 0")
     logging.info(
         f"Found Temp sensor: '{sensor.label}' -> reading: {sensor.read_temp() / 1000}C"
     )
-    thresholds = tuple(int(t) * 1000 for t in opts.thresholds.split(","))
+    thresholds = Thresholds.from_input(
+        lower=opts.lower, upper=opts.upper, buffer=opts.buffer
+    )
     logging.info(f"Using temp thresholds: {thresholds}")
+    weights = range(TEMP_HIST * TEMP_WEIGHT_FACTOR, 1, -TEMP_WEIGHT_FACTOR)
+    logging.info(f"Computed weights for rolling average: {list(weights)}")
     last_state_requested = None
+    temp_readings = deque(maxlen=TEMP_HIST)
     while True:
         try:
-            last_state_requested = fancontrol(sensor, thresholds, last_state_requested)
+            last_state_requested = fancontrol(
+                sensor, thresholds, last_state_requested, temp_readings, weights
+            )
         except Exception as e:
             # Catch any exceptions reading files etc, allowing to run forever
             if isinstance(e, KeyboardInterrupt):
@@ -94,9 +146,11 @@ def main():
 
 def fancontrol(
     sensor: TempSensor,
-    thresholds: tuple[int, int],
+    thresholds: Thresholds,
     last_state_requested: Optional[FanState],
-):
+    temp_readings: deque[int],
+    weights: Sequence[int],
+) -> Optional[FanState]:
     """Simple threshold based temp controller
 
     Provided lower,upper threshold can set the fan speed to one of 3 levels
@@ -106,18 +160,32 @@ def fancontrol(
     """
     fan_state = get_fan_state()
     temp = sensor.read_temp()
-    logging.debug(f"Running Fan control: {fan_state=}, {temp=}")
+    if not temp_readings:
+        # Set initial values so that ramp-up isnt too slow starting
+        temp_readings.extendleft([temp] * TEMP_HIST)
+    temp_readings.appendleft(temp)
+
+    weighted_average = int(
+        sum(weight * val for weight, val in zip(weights, temp_readings)) / sum(weights)
+    )
+    logging.debug(
+        f"Running Fan control: {fan_state=}, {temp=}, {weighted_average=}, {temp_readings=}"
+    )
     # NOTE: i8kfan reports weird fan states, the checks below are experimentally evaluated,
     # but the target fan states should be correctly named
-    if temp < thresholds[0] and fan_state != FanState.LOW:
-        last_state_requested = set_fan_state(FanState.OFF, last_state_requested)
-    elif thresholds[1] > temp > thresholds[0] and fan_state != FanState.UNKNOWN:
-        last_state_requested = set_fan_state(FanState.LOW, last_state_requested)
-    elif temp > thresholds[1] and fan_state != FanState.HIGH:
-        last_state_requested = set_fan_state(FanState.HIGH, last_state_requested)
+    if min(weighted_average, temp) < thresholds.lower and fan_state != FanState.LOW:
+        state_requested = set_fan_state(FanState.OFF, last_state_requested)
+    elif (
+        thresholds.upper > mean((temp, weighted_average)) > thresholds.lower
+        and fan_state != FanState.UNKNOWN
+    ):
+        state_requested = set_fan_state(FanState.LOW, last_state_requested)
+    elif max(weighted_average, temp) > thresholds.upper and fan_state != FanState.HIGH:
+        state_requested = set_fan_state(FanState.HIGH, last_state_requested)
     else:
         logging.debug("No Fan speed changes needed")
-    return last_state_requested
+        state_requested = last_state_requested
+    return state_requested
 
 
 def get_hwmon_module(module_name: str) -> Path:
@@ -180,11 +248,14 @@ def set_fan_state(
             "not requesting duplicate change"
         )
         return last_fan_state
-    logging.info(f"Setting Fan speed to {requested_fan_state.name}")
+    logging.debug(f"Setting Fan speed to {requested_fan_state.name}")
     cmd = [I8KFAN, "-", str(requested_fan_state.value)]
     logging.debug(f"Running command: {' '.join(cmd)}")
-    res = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    logging.debug(f"i8kfan output: {res.stdout.strip()}")
+    if DRY_RUN:
+        logging.info(f"DRY_RUN Mode, would have executed: '{cmd}'")
+    else:
+        res = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logging.debug(f"i8kfan output: {res.stdout.strip()}")
     return requested_fan_state
 
 
