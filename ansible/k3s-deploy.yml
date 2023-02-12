@@ -29,7 +29,6 @@
         - install
 
     - name: Post-Install Tasks (Master Node Only)
-      run_once: true
       when: inventory_hostname == groups["k3s_control"][0]
       tags:
         - bootstrap
