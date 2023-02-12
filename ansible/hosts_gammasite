@@ -3,9 +3,6 @@ gammasite:
   hosts:
     servapi4:
     gammatron:
-  vars:
-    cluster_name: gammasite-prod
-    flux_branch: main
 
 docker_host:
   hosts:
@@ -34,11 +31,13 @@ k3s_cluster:
 
 k3s_control:
   hosts:
-    gammatron:
+    servapi4:
       k3s_server:
         disable:
           - traefik
           - servicelb
           - metrics-server
-        default-local-storage-path: /rocketpool/kube/gammasite
         write-kubeconfig-mode: "0644"
+k3s_workers:
+  hosts:
+    gammatron:
