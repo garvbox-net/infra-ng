@@ -55,7 +55,7 @@ Steps to create:
   * Gateway creation: IPv4Only - less cruft!
 * Created VPN config on packetron, using the below file (this took a while to build out)
 
-  ```
+  ```text
   config openvpn 'packetron_p2p'
           option dev 'tun'
           option nobind '1'
@@ -111,7 +111,7 @@ Added the folllowing packages:
 
 * Custom packages for setup
 
-```
+```text
   luci luci-app-adblock luci-app-ddns luci-app-firewall luci-app-opkg luci-app-statistics luci-app-openvpn luci-app-opkg
   ddns-scripts-cloudflare openvpn-openssl
   collectd-mod-dns collectd-mod-thermal
