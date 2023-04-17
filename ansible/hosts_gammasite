@@ -3,14 +3,14 @@ gammasite:
   hosts:
     servapi4:
     gammatron:
+    watcher:
 
 docker_host:
   hosts:
-    servapi4:
+    watcher:
       deploy_apps:
-        - monitoring
-        - unifi-controller
-      deploy_monitoring_grafana: false # Grafana not needed in monitoring stack - runs on kube
+        - zigbee2mqtt
+      zigbee_dev: usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20221130144355-if00
 
 backups:
   hosts:
