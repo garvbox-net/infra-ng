@@ -3,26 +3,28 @@
 
 - name: Telegraf repository key
   ansible.builtin.apt_key:
-    url: https://repos.influxdata.com/influxdb.key
-    keyring: /etc/apt/trusted.gpg.d/telegraf.gpg
+    url: https://repos.influxdata.com/influxdata-archive_compat.key
+    keyring: /etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg
     state: present
+  become: true
 
 - name: Telegraf repository
   ansible.builtin.apt_repository:
-    repo: "deb https://repos.influxdata.com/ubuntu {{ ansible_distribution_release }} stable"
+    repo: "deb [signed-by=/etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg] https://repos.influxdata.com/debian stable main"
     state: present
     filename: telegraf
   register: repo_telegraf
+  become: true
   notify:
-    - Update Apt Cache"
+    - Update Apt Cache
 
-- name: Telegraf packages
+- name: Telegraf and Sensor packages
   ansible.builtin.apt:
     name:
       - telegraf
+      - lm-sensors
     state: present
+  become: true
   register: install_telegraf
-
-# TODO: Add setups for:
-#   - lm-sensors package
-#   - config file setup
+  notify:
+    - Restart Telegraf

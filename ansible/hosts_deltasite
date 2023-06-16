@@ -4,6 +4,7 @@ deltasite:
     deltapi4:
     deltanetpi:
     kraken:
+      ansible_host: kraken.deltasite.lan
 
 docker_host:
   hosts:
