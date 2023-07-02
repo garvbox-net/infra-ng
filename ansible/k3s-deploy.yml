@@ -67,7 +67,7 @@
 
         - name: Install SOPS GPG key
           ansible.builtin.shell: >
-            echo "{{ vault_sops_gpg_key }}" | gpg --batch --pinentry-mode loopback --import /dev/stdin
+            echo "{{ sops_gpg_key }}" | gpg --batch --pinentry-mode loopback --import /dev/stdin
           register: result
           changed_when:
             - result.stderr is not search('not changed')
@@ -91,7 +91,7 @@
           ansible.builtin.shell: >
             kubectl create -n {{ flux_namespace }} secret generic sops-gpg
             --namespace=flux-system
-            --from-literal=sops.asc="{{ vault_sops_gpg_key }}"
+            --from-literal=sops.asc="{{ sops_gpg_key }}"
           register: result
           changed_when:
             - result.stdout is search('created')

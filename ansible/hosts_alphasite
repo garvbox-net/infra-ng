@@ -1,0 +1,34 @@
+---
+alphasite:
+  hosts:
+    teslatron:
+      ansible_host: teslatron.glenside.lan
+  vars:
+    tls_domain_main: alphasite.garvbox.net
+    tls_domain_sans: "*.alphasite.garvbox.net"
+    le_prod: true
+
+k3s_cluster:
+  children:
+    # NOTE if adding the k3s groups you must add all three groups to the inventory even if
+    # only using one. This is to preserve the ability to do certain tasks on control/workers only
+    k3s_workers:
+    k3s_control:
+      hosts:
+        teslatron:
+          k3s_server:
+            disable:
+              - traefik
+              - servicelb
+              - metrics-server
+            write-kubeconfig-mode: "0644"
+            default-local-storage-path: /ultrapool/kube/local-path-provisioner
+  vars:
+    cluster_name: teslops
+    flux_branch: main
+    flux_git_type: github
+    flux_git_user: garvbox-net
+    flux_git_repo: alphasite-gitops
+    flux_git_branch: main
+    flux_git_path: "clusters/teslops"
+    flux_namespace: flux-system

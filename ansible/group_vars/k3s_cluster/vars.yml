@@ -5,14 +5,16 @@ sops_version: "3.7.3"
 sops_arch: "{{'arm64' if ansible_architecture == 'aarch64' else 'amd64'}}"
 sops_deb_url: "https://github.com/mozilla/sops/releases/download/v{{ sops_version }}/sops_{{ sops_version }}_{{ sops_arch }}.deb"
 
-flux_git_type: github
-flux_git_user: garvbox
-flux_git_repo: gitopsokat
-flux_git_branch: "{{ flux_branch | default('main') }}"
-flux_git_path: "clusters/{{ cluster_name }}"
-flux_namespace: flux-system
-# Get gitlab token from Vault
-flux_git_token: "{{ vault_flux_git_token }}"
+# flux_git_type: github
+# flux_git_user: garvbox
+# flux_git_repo: gitopsokat
+# flux_git_branch: "{{ flux_branch | default('main') }}"
+# flux_git_path: "clusters/{{ cluster_name }}"
+# flux_namespace: flux-system
 
 # Enable Root escalation
 k3s_become: true
+
+# Vault decrypted vars
+flux_git_token: "{{ vault_flux_git_token }}"
+sops_gpg_key: "{{ vault_sops_gpg_key }}"

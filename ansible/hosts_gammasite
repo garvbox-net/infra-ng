@@ -28,6 +28,12 @@ k3s_cluster:
   vars:
     cluster_name: gammasite-prod
     flux_branch: main
+    flux_git_type: github
+    flux_git_user: garvbox
+    flux_git_repo: gitopsokat
+    flux_git_branch: main
+    flux_git_path: "clusters/gammasite-prod"
+    flux_namespace: flux-system
 
 k3s_control:
   hosts:
