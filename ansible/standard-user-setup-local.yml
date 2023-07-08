@@ -1,0 +1,6 @@
+---
+
+- name: Set up Server standardised Environment
+  hosts: all
+  roles:
+    - base-user-home
