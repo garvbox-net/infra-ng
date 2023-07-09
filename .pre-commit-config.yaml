@@ -1,0 +1,23 @@
+fail_fast: true
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: Ruff
+        entry: poetry run ruff check
+        types: [python]
+        language: system
+  - repo: local
+    hooks:
+      - id: black
+        name: Black
+        entry: poetry run black --check
+        types: [python]
+        language: system
+  - repo: local
+    hooks:
+      - id: ansible-lint
+        name: Ansible Lint
+        entry: poetry run ansible-lint
+        types: [yaml]
+        language: system

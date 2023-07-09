@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ Run command on all running containers """
-import sys
 import argparse
+import sys
 
 from util import lxc_cli
 
@@ -23,9 +23,7 @@ def main():
     containers = lxc_cli.get_running_containers(options.remote)
     if options.container != "all":
         if options.container not in containers:
-            print(
-                f"ERROR: Container does not exist or is not running: {options.container}"
-            )
+            print(f"ERROR: Container does not exist or is not running: {options.container}")
             return 1
         containers = [options.container]
 

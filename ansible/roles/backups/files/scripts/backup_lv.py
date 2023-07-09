@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import os
-import sys
-from datetime import date
-from argparse import ArgumentParser
-import subprocess
 import logging
+import os
 import platform
+import subprocess
+import sys
+from argparse import ArgumentParser
+from datetime import date
 
 import requests
 
@@ -22,15 +22,9 @@ class BackupError(RuntimeError):
 def main():
     p = ArgumentParser()
     p.add_argument("-t", "--tgt", required=True, help="Target backup directory")
-    p.add_argument(
-        "-v", "--vg", required=True, help="Volume group containing LV to backup"
-    )
-    p.add_argument(
-        "-l", "--lv", required=True, help="LV To back up, snap name will be <lv>-backup"
-    )
-    p.add_argument(
-        "-p", "--src-path", default="*", help="Path(s) to back up within snapshot"
-    )
+    p.add_argument("-v", "--vg", required=True, help="Volume group containing LV to backup")
+    p.add_argument("-l", "--lv", required=True, help="LV To back up, snap name will be <lv>-backup")
+    p.add_argument("-p", "--src-path", default="*", help="Path(s) to back up within snapshot")
     p.add_argument("-s", "--size", default="5G", help="LV Snap Size")
     p.add_argument(
         "-m",
@@ -121,9 +115,7 @@ def mount_snap(vg, snap_lv, mountpoint):
         raise BackupError(
             f"Something is already mounted at {mountpoint}, possible previous failed cleanup"
         )
-    return _run_cmd(
-        ["mount", os.path.join("/dev", vg, snap_lv), mountpoint], check=True
-    )
+    return _run_cmd(["mount", os.path.join("/dev", vg, snap_lv), mountpoint], check=True)
 
 
 def unmount_snap(mountpoint):
