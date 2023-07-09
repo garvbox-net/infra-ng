@@ -118,12 +118,8 @@ def main():
     module_path = get_hwmon_module(opts.module)
     logging.info(f"Monitor Module path: {module_path}")
     sensor = get_temp_sensor(module_path, "Package id 0")
-    logging.info(
-        f"Found Temp sensor: '{sensor.label}' -> reading: {sensor.read_temp() / 1000}C"
-    )
-    thresholds = Thresholds.from_input(
-        lower=opts.lower, upper=opts.upper, buffer=opts.buffer
-    )
+    logging.info(f"Found Temp sensor: '{sensor.label}' -> reading: {sensor.read_temp() / 1000}C")
+    thresholds = Thresholds.from_input(lower=opts.lower, upper=opts.upper, buffer=opts.buffer)
     logging.info(f"Using temp thresholds: {thresholds}")
     weights = range(TEMP_HIST * TEMP_WEIGHT_FACTOR, 1, -TEMP_WEIGHT_FACTOR)
     logging.info(f"Computed weights for rolling average: {list(weights)}")
@@ -239,9 +235,7 @@ def get_fan_state() -> int:
     return int(fan_status)
 
 
-def set_fan_state(
-    requested_fan_state: FanState, last_fan_state: Optional[FanState]
-) -> FanState:
+def set_fan_state(requested_fan_state: FanState, last_fan_state: Optional[FanState]) -> FanState:
     if last_fan_state == requested_fan_state and last_fan_state is not None:
         logging.debug(
             f"Last Fan state = Requested Fan State ({requested_fan_state}), "

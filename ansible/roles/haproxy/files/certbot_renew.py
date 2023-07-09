@@ -3,11 +3,11 @@
 
 Also bounce haproxy to pick up new cert
 """
-import os
-import sys
 import configparser
-import subprocess
 import logging
+import os
+import subprocess
+import sys
 
 
 class CertRenewalFail(Exception):
@@ -27,11 +27,10 @@ class CertLoadFail(CertRenewalFail):
 
 
 def main():
-
     # Set up stdout basic logging
     logging.basicConfig(
         level=logging.INFO,
-        format=f"[%(asctime)-15s %(levelname)8s] [%(filename)20.20s:%(lineno)4s] %(message)s",
+        format="[%(asctime)-15s %(levelname)8s] [%(filename)20.20s:%(lineno)4s] %(message)s",
     )
 
     cfg = configparser.ConfigParser()
@@ -61,9 +60,7 @@ def run_cert_update():
         return
     logging.info("Running Certificate Renewal")
     # Update cert
-    cmd_renew = (
-        "certbot renew --force-renew --preferred-challenges http --http-01-port=8888"
-    )
+    cmd_renew = "certbot renew --force-renew --preferred-challenges http --http-01-port=8888"
     if subprocess.call(cmd_renew.split()) != 0:
         raise CertRenewalFail("Failed to renew cert...", respcode=1)
 
@@ -81,9 +78,7 @@ def load_cert_haproxy(config):
     )
 
     # LetsEncrypt Certs
-    LE_CERT_DIR = os.path.join(
-        config.get("LE_PATH", fallback="/etc/letsencrypt/live"), CERT_NAME
-    )
+    LE_CERT_DIR = os.path.join(config.get("LE_PATH", fallback="/etc/letsencrypt/live"), CERT_NAME)
     LE_FULLCHAIN = LE_CERT_DIR + "/fullchain.pem"  # fullchain
     LE_PRIVKEY = LE_CERT_DIR + "/privkey.pem"  # private key
 

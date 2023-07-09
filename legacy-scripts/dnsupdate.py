@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+import json
+import logging
 import os
 import sys
 import time
-import json
-import logging
 from argparse import ArgumentParser
 from urllib.request import urlopen
 
@@ -14,13 +14,10 @@ nm_server = "dynamicdns.park-your-domain.com"
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument(
-        "--debug", action="store_true", help="Debug mode - increased logging"
-    )
+    parser.add_argument("--debug", action="store_true", help="Debug mode - increased logging")
     parser.add_argument(
         "--fqdn",
-        help="Fully Qualified domain name to update - "
-        + "will be split into host + domain",
+        help="Fully Qualified domain name to update - " + "will be split into host + domain",
     )
     parser.add_argument("--password", help="API Password (namecheap)")
     opts = parser.parse_args()

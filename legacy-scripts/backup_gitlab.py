@@ -7,21 +7,17 @@ Enforce file retention from input arguments
 
 """
 import os
-import sys
-from datetime import date, datetime
-from argparse import ArgumentParser
 import subprocess
+import sys
+from argparse import ArgumentParser
+from datetime import date, datetime
 from glob import glob
 
 
 def main():
     p = ArgumentParser()
-    p.add_argument(
-        "--tgt", default="/var/backups/gitlab", help="Target backup directory"
-    )
-    p.add_argument(
-        "--num_backups", default=6, type=int, help="Number of backups to keep"
-    )
+    p.add_argument("--tgt", default="/var/backups/gitlab", help="Target backup directory")
+    p.add_argument("--num_backups", default=6, type=int, help="Number of backups to keep")
     p.add_argument("--backup_tgt", help="External backup target, rsync format")
     opts = p.parse_args()
 

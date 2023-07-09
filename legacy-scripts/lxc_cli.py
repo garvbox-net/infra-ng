@@ -4,7 +4,7 @@ import subprocess
 
 
 def get_running_containers(remote=None):
-    """ Get List of Running Container Names
+    """Get List of Running Container Names
 
     Args:
         remote (str): Remote LXD Hostname
@@ -28,7 +28,7 @@ def get_running_containers(remote=None):
 
 
 def lxc_exec(container, cmd, remote=None):
-    """ Run command in container using lxc exec, returning subprocess result
+    """Run command in container using lxc exec, returning subprocess result
 
     Args:
         container (str): Container Name
@@ -46,6 +46,4 @@ def lxc_exec(container, cmd, remote=None):
     update_cmd += ["--", "sh", "-xc"]
     update_cmd.append(cmd)
     print(f"Running on container {container}, command: {cmd}")
-    return subprocess.run(
-        update_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-    )
+    return subprocess.run(update_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

@@ -8,10 +8,10 @@ Idea for this was got here:
 https://serversforhackers.com/c/letsencrypt-with-haproxy
 
 """
-import os
-import sys
-import subprocess
 import logging
+import os
+import subprocess
+import sys
 
 from util.misc import config_logger, send_mail
 
@@ -28,7 +28,7 @@ LE_PRIVKEY = LE_CERT_PATH + "/privkey.pem"  # private key
 
 
 class CertRenewalFail(Exception):
-    """ Basic Cert Renewal Exception Used for error capture and emailing """
+    """Basic Cert Renewal Exception Used for error capture and emailing"""
 
     DEFAULT_RESPCODE = 1
 
@@ -38,7 +38,7 @@ class CertRenewalFail(Exception):
 
 
 class CertLoadFail(CertRenewalFail):
-    """ Problem Loading Cert to HAproxy """
+    """Problem Loading Cert to HAproxy"""
 
     DEFAULT_RESPCODE = 2
 
@@ -67,12 +67,10 @@ def main():
 
 
 def run_cert_update():
-    """ Certificate Update Procedure """
+    """Certificate Update Procedure"""
     logging.info("Running Certificate Renewal")
     # Update cert
-    cmd_renew = (
-        "certbot renew --force-renew --preferred-challenges http --http-01-port=8888"
-    )
+    cmd_renew = "certbot renew --force-renew --preferred-challenges http --http-01-port=8888"
     if subprocess.call(cmd_renew.split()) != 0:
         raise CertRenewalFail("Failed to renew cert...", respcode=1)
 
