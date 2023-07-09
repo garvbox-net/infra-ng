@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "infra-ng"
+version = "0.1.0"
+description = "Infrastructure Management GNet"
+authors = ["garvbox <garv@garvbox.net>"]
+readme = "README.md"
+packages = [{include = "infra_ng"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+ansible = "^8.1.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.277"
+black = "^23.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
