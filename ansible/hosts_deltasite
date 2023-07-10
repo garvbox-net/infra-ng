@@ -5,6 +5,7 @@ deltasite:
     deltanetpi:
     kraken:
       ansible_host: kraken.deltasite.lan
+      zfs_monitoring_enabled: true
 
 docker_host:
   hosts:
