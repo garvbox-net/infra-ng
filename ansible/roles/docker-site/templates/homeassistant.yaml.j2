@@ -41,7 +41,8 @@ services:
     ports:
       - 8443:8443
     volumes:
-      - ha-config:/config
+      - ha-config:/homeassistant
+      - esphome-data:/esphome
       - /etc/localtime:/etc/localtime:ro
     environment:
       DEFAULT_WORKSPACE: "/config"
@@ -55,6 +56,24 @@ services:
       traefik.http.routers.codeserver.middlewares: "csinternal"
       traefik.http.middlewares.csinternal.ipwhitelist.sourcerange: "192.168.0.0/16,10.0.0.0/8"
     networks:
+      - web
+
+  esphome:
+    image: ghcr.io/esphome/esphome:latest
+    volumes:
+      - esphome-data:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    ports:
+      - 6052:6052
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.codeserver.rule: "Host(`esphome.{{ tls_domain_main }}`)"
+      traefik.http.routers.codeserver.middlewares: "csinternal"
+      traefik.http.middlewares.csinternal.ipwhitelist.sourcerange: "192.168.0.0/16,10.0.0.0/8"
+    networks:
+      - ha-internal
       - web
 
   influxdb:
@@ -96,3 +115,4 @@ volumes:
   mosquitto-config:
   influx-data:
   grafana-data:
+  esphome-data:
