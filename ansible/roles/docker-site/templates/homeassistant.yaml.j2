@@ -41,8 +41,7 @@ services:
     ports:
       - 8443:8443
     volumes:
-      - ha-config:/homeassistant
-      - esphome-data:/esphome
+      - ha-config:/config
       - /etc/localtime:/etc/localtime:ro
     environment:
       DEFAULT_WORKSPACE: "/config"
