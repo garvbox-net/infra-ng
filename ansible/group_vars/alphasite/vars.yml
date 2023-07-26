@@ -1,0 +1,2 @@
+---
+telegraf_influx_url: http://influxdb.default.kube.gammasite.lan:8086
