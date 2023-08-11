@@ -144,7 +144,8 @@ on the K3S environment.
 
 This [comment](https://github.com/k3s-io/k3s/issues/4391#issuecomment-1233314825) from one of the K3S devs was key in understanding the setup.
 Basically K3S will automatically detect the nvidia container runtime but you need to ensure to set up the `RuntimeClass` in
-kubernetes to connect it. No messing about with config.toml for containerd needed.
+kubernetes to connect it. No messing about with config.toml for containerd needed. You will also need to reference the RuntimeClass
+from your deployment/pod.
 
 Setup Steps:
 
@@ -156,10 +157,14 @@ Setup Steps:
   curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | sudo tee /etc/apt/sources.list.d/libnvidia-container.list
   ```
 
-* Update apt and install nvidia drivers, tools and container runtime
+* Update apt and install nvidia drivers, tools and container runtime. Note the encode package was needed on older drivers (may be included in newer ones)
 
   ```bash
-  sudo apt update && sudo apt install nvidia-headless-515-server nvidia-utils-515-server nvidia-container-toolkit
+  sudo apt update && sudo apt install \
+      nvidia-headless-525-server \
+      nvidia-utils-525-server \
+      nvidia-container-toolkit \
+      libnvidia-encode-525-server
   ```
 
 * Reboot to load nvidia driver. It would be a good idea to disable k3s here, stop it and run the `k3s-killall.sh` script
@@ -169,6 +174,8 @@ Setup Steps:
 
 At this point the machine is prepped and you can start up k3s if you disabled it. You can check that k3s detected the GPU
 after it has started with `sudo grep nvidia /var/lib/rancher/k3s/agent/etc/containerd/config.toml`
+
+You may proceed to deploying the nvidia-device-plugin pod and workloads after this.
 
 # GitOps with Flux
 
