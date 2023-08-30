@@ -14,7 +14,7 @@ def main():
 
     date_str = date.today().strftime("%y_%m_%d")
     snap_name = opts.dataset + "@backup_" + date_str
-    backup_file_name = f"{opts.tgt} /zfsbackup_{opts.dataset.replace('/', '_')}_{date_str}.gz"
+    backup_file_name = f"{opts.tgt}/zfsbackup_{opts.dataset.replace('/', '_')}_{date_str}.gz"
 
     # Check root perms
     if os.geteuid() != 0:
