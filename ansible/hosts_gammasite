@@ -17,7 +17,8 @@ backups:
     gammatron:
       backup_notification_url: "{{ vault_infra_notification_url }}"
       backup_time: "weekly"
-      backup_cmd: "backup_lv.py -t /datapool/backups/k3s -v ubuntu-vg -l k3s-lv -s 10G -p k3s/storage -m /mnt -f /var/log/snap_backup.log"
+      # backup_cmd: "backup_lv.py -t /datapool/backups/k3s -v ubuntu-vg -l k3s-lv -s 10G -p k3s/storage -m /mnt -f /var/log/snap_backup.log"
+      backup_cmd: "backup_zfs.py --dataset rocketpool/kube --tgt /datapool/backups/k3s"
 
 k3s_cluster:
   children:
@@ -37,14 +38,8 @@ k3s_cluster:
 
 k3s_control:
   hosts:
-    servapi4:
-      k3s_server:
-        disable:
-          - traefik
-          - servicelb
-          - metrics-server
-        write-kubeconfig-mode: "0644"
-k3s_workers:
-  hosts:
     gammatron:
-      k3s_registration_address: servapi4.gammasite.lan
+# k3s_workers:
+#   hosts:
+#     gammatron:
+#       k3s_registration_address: servapi4.gammasite.lan
