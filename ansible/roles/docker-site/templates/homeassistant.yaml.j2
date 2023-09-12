@@ -79,7 +79,7 @@ services:
     image: "influxdb:1.8"
     restart: unless-stopped
     ports:
-      - 8086
+      - 8086:8086
     volumes:
       - influx-data:/var/lib/influxdb
     labels:
