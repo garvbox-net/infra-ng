@@ -3,11 +3,10 @@ gammasite:
   hosts:
     servapi4:
     gammatron:
-    watcher:
 
 docker_host:
   hosts:
-    watcher:
+    servapi4:
       deploy_apps:
         - zigbee2mqtt
       zigbee_dev: usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20221130144355-if00
@@ -26,6 +25,15 @@ k3s_cluster:
     # only using one. This is to preserve the ability to do certain tasks on control/workers only
     k3s_workers:
     k3s_control:
+      hosts:
+        gammatron:
+          k3s_server:
+            disable:
+              - traefik
+              - servicelb
+              - metrics-server
+            write-kubeconfig-mode: "0644"
+            default-local-storage-path: /rocketpool/kube/local-path-provisioner
   vars:
     cluster_name: gammasite-prod
     flux_branch: main
@@ -39,7 +47,3 @@ k3s_cluster:
 k3s_control:
   hosts:
     gammatron:
-# k3s_workers:
-#   hosts:
-#     gammatron:
-#       k3s_registration_address: servapi4.gammasite.lan
