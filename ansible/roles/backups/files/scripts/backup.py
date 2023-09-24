@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -9,9 +10,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, ClassVar, List, Protocol, Type
 
+import requests
+
 _truthy_strs = ["true", "1", "y", "yes"]
 DEBUG = os.getenv("DEBUG", "").lower() in _truthy_strs
 DRY_RUN = os.getenv("DRY_RUN", "").lower() in _truthy_strs
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 
 def main():
@@ -32,7 +36,11 @@ def main():
         snapshotter.prune()
     except BackupError as e:
         logging.error(str(e))
+        send_discord_notification(e)
         return e.return_code
+    except Exception as e:
+        send_discord_notification(e)
+        raise
 
 
 def _get_snapshotter_from_args(supported_snapshotters: List[Type["Snapshotter"]]):
@@ -210,6 +218,17 @@ class ZfsSnapshotter:
         if exclude_snap in snapshots:
             snapshots.remove(exclude_snap)
         return snapshots[0] if snapshots else None
+
+
+def send_discord_notification(message):
+    if WEBHOOK_URL is None:
+        logging.info("Webhook not set - skipping notification")
+        return
+    logging.info("Sending Discord Notification")
+    requests.post(
+        WEBHOOK_URL,
+        json={"username": platform.node(), "content": f"Backup Error:\n{message}"},
+    )
 
 
 def _run_cmd(command: str, check=True, shell=False) -> subprocess.CompletedProcess:
