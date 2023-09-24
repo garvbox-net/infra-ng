@@ -5,7 +5,7 @@ import re
 import subprocess
 import sys
 from argparse import ArgumentParser, Namespace
-from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, ClassVar, List, Protocol, Type
 
@@ -22,14 +22,12 @@ def main():
         datefmt="%Y-%m-%d %H:%M:%S",
         filename=options.log_file,
     )
-
     # Check root perms
     if not DRY_RUN and os.geteuid() != 0:
         print("ERROR: Root permissions needed for Snapshots")
         return 1
-
     try:
-        snap_name = snapshotter.create_snapshot()
+        snap_name = snapshotter.create_source_snapshot()
         snapshotter.backup_snapshot(snap_name)
         snapshotter.prune()
     except BackupError as e:
@@ -67,6 +65,25 @@ class BackupError(RuntimeError):
         self.return_code = return_code
 
 
+class SnapShotVolume(Protocol):
+    name: ClassVar[str]
+
+    def exists(self) -> bool:
+        ...
+
+    def create_snapshot(self, snapshot_prefix: str) -> str:
+        ...
+
+    def destroy_snapshot(self, snapshot: str) -> None:
+        ...
+
+    def get_snapshots(self, snapshot_prefix: str) -> list[str]:
+        ...
+
+    def prune_snapshots(self):
+        ...
+
+
 class Snapshotter(Protocol):
     name: ClassVar[str]
     args: ClassVar[dict[str, dict[str, Any]]]
@@ -76,14 +93,49 @@ class Snapshotter(Protocol):
     def __init__(self, options: Namespace) -> None:
         ...
 
-    def create_snapshot(self) -> str:
+    def create_source_snapshot(self) -> str:
         ...
 
-    def backup_snapshot(self, snap_name: str):
+    def backup_snapshot(self, snapshot: str):
         ...
 
     def prune(self):
         ...
+
+
+@dataclass
+class ZfsDataSet:
+    name: str
+    remote_host: str | None = None
+
+    def exists(self):
+        return _run_cmd(f"zfs list -H {self.name}", check=False).returncode == 0
+
+    def create_snapshot(self, snapshot_prefix: str) -> str:
+        date_str = datetime.now().strftime("%y%m%d_%H%M%S")
+        snapshot_name = f"{snapshot_prefix}_{date_str}"
+        logging.info("Taking zfs snapshot: " + snapshot_name)
+        _run_cmd(f"zfs snap -r {self.name}@{snapshot_name}")
+        return snapshot_name
+
+    def get_snapshots(self, snapshot_prefix: str) -> list[str]:
+        logging.debug(f"Getting snapshots for {self.name}")
+        snap_pattern = rf"{self.name}@({snapshot_prefix}_\d+_\d+)"
+        res = _run_cmd(f"zfs list -H -t snap {self.name}")
+        snap_names = []
+        for line in res.stdout.splitlines():
+            stripped_line = line.decode().split()[0]
+            logging.debug(f"Parsing snapshot output: {stripped_line}")
+            match = re.match(snap_pattern, stripped_line)
+            if not match:
+                logging.debug(f"No match for snapshot: {stripped_line} with pattern {snap_pattern}")
+                continue
+            snap_names.append(match.group(1))
+        return sorted(snap_names)
+
+    def delete_snapshot(self, snapshot: str):
+        logging.info(f"Deleting Snapshot: {snapshot}")
+        _run_cmd(f"zfs destroy -R {self.name}@{snapshot}")
 
 
 class ZfsSnapshotter:
@@ -93,107 +145,86 @@ class ZfsSnapshotter:
         "--dest-dataset": {"help": "Destination Backup Dataset"},
         "--dest-directory": {"help": "Destination Backup Directory"},
         "--snap-prefix": {"help": "Snapshot Name Prefix", "default": "backup"},
+        "--num-snaps": {
+            "help": "Number of Snapshots to keep (Local and Remote)",
+            "type": int,
+            "default": 3,
+        },
     }
 
     snap_prefix: str
-    source_dataset: str
-    dest_dataset: str
-    dest_dir: str
-    _snap_cache: dict[str, list[str]]
+    source_dataset: ZfsDataSet
+    dest_dataset: ZfsDataSet | None = None
 
     def __init__(self, options: Namespace) -> None:
         self.options = options
-        self._snap_cache = defaultdict(list)
         # Convenience helpers from class options
         self.snap_prefix = options.snap_prefix
-        self.source_dataset = options.src_dataset
-        self.dest_dataset = options.dest_dataset
-        self.dest_dir = options.dest_directory
+        self.source_dataset = ZfsDataSet(options.src_dataset)
+        self.dest_dataset = ZfsDataSet(options.dest_dataset) if options.dest_dataset else None
 
-    @staticmethod
-    def add_args(parser: ArgumentParser) -> None:
-        parser.add_argument("--src-dataset", help="Source ZFS Dataset for Snapshot", required=True)
-        parser.add_argument("--snap-prefix", help="Snapshot Name Prefix", default="backup")
-        parser.add_argument("--dest-dataset", help="Destination ZFS Dataset (snapshot replication)")
-        parser.add_argument("--dest-directory", help="Destination Directory (tar backup)")
-        parser.add_argument(
-            "--ssh-user-host", help="SSH user@host for remote backups (Requires ssh trust)"
-        )
-
-    def create_snapshot(self) -> str:
+    def create_source_snapshot(self) -> str:
         """Create a Snapshot for Backup on the defined source dataset"""
-        res = _run_cmd(f"zfs list -H {self.source_dataset}", check=False)
-        if res.returncode != 0:
-            raise BackupError(f"Error: {res.stderr.decode().strip()}", return_code=res.returncode)
-        date_str = datetime.now().strftime("%y%m%d_%H%M%S")
-        snap_name = f"{self.source_dataset}@{self.snap_prefix}_{date_str}"
-        logging.info("Taking zfs snapshot: " + snap_name)
-        _run_cmd(f"zfs snap -r {snap_name}")
-        self._snap_cache.pop(self.source_dataset, None)  # force cache refresh
-        return snap_name
+        if not self.source_dataset.exists():
+            raise BackupError(f"Dataset does not exist: {self.source_dataset.name}")
+        return self.source_dataset.create_snapshot(self.snap_prefix)
 
-    def backup_snapshot(self, snap_name: str):
+    def backup_snapshot(self, snapshot: str):
         """Send Snapshot to the designated targets"""
+        if not self.dest_dataset:
+            raise BackupError("Error: Destination Dataset for backups not provided")
         # ZFS-specific behaviour: we can locate a source snap for incremental replication
-        incremental_src = self.get_incremental_source_snap(snap_name)
-        if incremental_src and incremental_src in self._get_snaps(self.dest_dataset):
+        incremental_src = self._get_incremental_source(self.source_dataset, snapshot)
+        src_ds_name = self.source_dataset.name
+        if incremental_src and incremental_src in self.dest_dataset.get_snapshots(self.snap_prefix):
             logging.info(
                 f"Found incremental source snapshot {incremental_src} and matching replica on "
                 "destination - using incremental snapshot"
             )
-            # FIXME: Add incremental replication cmd
-            raise NotImplementedError("Incremental replication not done yet")
+            src_path = f"-i {src_ds_name}@{incremental_src} {src_ds_name}@{snapshot}"
         else:
             logging.info("No source snapshots for Incremental Replication - making full copy")
-            # FIXME: Add full replication cmd and options
-            # _run_cmd(f"zfs send -R {src} | zfs recv {}", shell=True)
+            src_path = f"{src_ds_name}@{snapshot}"
+        _run_cmd(
+            f"zfs send -R {src_path} | zfs recv -F {self.dest_dataset.name}",
+            shell=True,
+        )
 
     def prune(self):
         """Prune Source snaps not needed (and Destination if using snapshot replication)"""
-        ...
+        datasets = [self.source_dataset]
+        if self.dest_dataset is not None:
+            datasets.append(self.dest_dataset)
+        for dataset in datasets:
+            snap_names = dataset.get_snapshots(self.snap_prefix)
+            if self.options.num_snaps > len(snap_names):
+                logging.info(f"No snapshots to prune on {dataset.name}")
+                continue
+            snaps_to_delete = snap_names[self.options.num_snaps :]
+            for snap_name in snaps_to_delete:
+                dataset.delete_snapshot(snap_name)
 
-    def get_incremental_source_snap(self, new_snap_exclude: str) -> str | None:
+    def _get_incremental_source(self, dataset: ZfsDataSet, exclude_snap: str) -> str | None:
         """Get the Last snapshot for incremental replication"""
-        snapshots = self._get_snaps(self.source_dataset)
-        if new_snap_exclude in snapshots:
-            snapshots.remove(new_snap_exclude)
-        return sorted(snapshots)[0] if snapshots else None
-
-    def get_dest_snapshots(self) -> list[str]:
-        ...
-
-    def remove_src_snapshot(self, snapshot_name: str):
-        """Remove Snapshot after Backup completed"""
-        ...
-
-    def _get_snaps(self, dataset_name: str) -> list[str]:
-        """Gets a list of snapshot names, filtered by the backup prefix and date regex"""
-        if dataset_name not in self._snap_cache:
-            logging.debug(f"Getting snapshots for {dataset_name}")
-            snap_pattern = rf"{dataset_name}@({self.snap_prefix}\w+_\d+_\d+)"
-            res = _run_cmd(f"zfs list -H -t snap {dataset_name}")
-            snap_names = []
-            for line in res.stdout.splitlines():
-                stripped_line = line.decode().split()[0]
-                logging.debug(f"Parsing snapshot output: {stripped_line}")
-                match = re.match(snap_pattern, stripped_line)
-                if not match:
-                    logging.debug(
-                        f"No match for snapshot: {stripped_line} with pattern {snap_pattern}"
-                    )
-                    continue
-                snap_names.append(match.group(1))
-            self._snap_cache[dataset_name] = snap_names
-        return self._snap_cache[dataset_name]
+        snapshots = dataset.get_snapshots(self.snap_prefix)
+        if exclude_snap in snapshots:
+            snapshots.remove(exclude_snap)
+        return snapshots[0] if snapshots else None
 
 
 def _run_cmd(command: str, check=True, shell=False) -> subprocess.CompletedProcess:
+    if "destroy" in command and "@" not in command:
+        raise BackupError(f"Destroy protection prevented running command: {command}")
     cmd = command if shell else command.split(" ")
     if DRY_RUN:
         logging.info(f"Dry Run - would have run: {command}")
         res = subprocess.CompletedProcess(cmd, 0, "", "")
     else:
-        res = subprocess.run(cmd, check=check, shell=shell, capture_output=True)
+        logging.debug(f"Running Command: {cmd}")
+        try:
+            res = subprocess.run(cmd, check=check, shell=shell, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            raise BackupError(f"Error: {e.stderr.decode().strip()}", return_code=e.returncode)
     return res
 
 
