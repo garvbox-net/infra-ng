@@ -119,6 +119,10 @@ class ZfsDataSet:
     def exists(self):
         return _run_cmd(f"zfs list -H {self.name}", check=False).returncode == 0
 
+    def create(self):
+        logging.info(f"Creating ZFS Dataset: {self.name}")
+        _run_cmd(f"zfs create {self.name}")
+
     def create_snapshot(self, snapshot_prefix: str) -> str:
         date_str = datetime.now().strftime("%y%m%d_%H%M%S")
         snapshot_name = f"{snapshot_prefix}_{date_str}"
@@ -127,6 +131,7 @@ class ZfsDataSet:
         return snapshot_name
 
     def get_snapshots(self, snapshot_prefix: str) -> list[str]:
+        """Get a list of snapshot names matching prefix, sorted by time ascending"""
         logging.debug(f"Getting snapshots for {self.name}")
         snap_pattern = rf"{self.name}@({snapshot_prefix}_\d+_\d+)"
         res = _run_cmd(f"zfs list -H -t snap {self.name}")
@@ -139,7 +144,9 @@ class ZfsDataSet:
                 logging.debug(f"No match for snapshot: {stripped_line} with pattern {snap_pattern}")
                 continue
             snap_names.append(match.group(1))
-        return sorted(snap_names)
+        snap_names.sort()
+        logging.debug(f"Found snapshots: {snap_names}")
+        return snap_names
 
     def delete_snapshot(self, snapshot: str):
         logging.info(f"Deleting Snapshot: {snapshot}")
@@ -181,18 +188,21 @@ class ZfsSnapshotter:
         """Send Snapshot to the designated targets"""
         if not self.dest_dataset:
             raise BackupError("Error: Destination Dataset for backups not provided")
-        # ZFS-specific behaviour: we can locate a source snap for incremental replication
-        incremental_src = self._get_incremental_source(self.source_dataset, snapshot)
-        src_ds_name = self.source_dataset.name
-        if incremental_src and incremental_src in self.dest_dataset.get_snapshots(self.snap_prefix):
+        if not self.dest_dataset.exists():
+            self.dest_dataset.create()
+        # Try to locate a source snap for incremental replication
+        dest_snaps = self.dest_dataset.get_snapshots(self.snap_prefix)
+        incremental_src = self._get_incremental_source(self.source_dataset, dest_snaps)
+        source_ds = self.source_dataset.name
+        if incremental_src:
             logging.info(
                 f"Found incremental source snapshot {incremental_src} and matching replica on "
                 "destination - using incremental snapshot"
             )
-            src_path = f"-i {src_ds_name}@{incremental_src} {src_ds_name}@{snapshot}"
+            src_path = f"-i {source_ds}@{incremental_src} {source_ds}@{snapshot}"
         else:
             logging.info("No source snapshots for Incremental Replication - making full copy")
-            src_path = f"{src_ds_name}@{snapshot}"
+            src_path = f"{source_ds}@{snapshot}"
         _run_cmd(
             f"zfs send -R {src_path} | zfs recv -F {self.dest_dataset.name}",
             shell=True,
@@ -205,19 +215,22 @@ class ZfsSnapshotter:
             datasets.append(self.dest_dataset)
         for dataset in datasets:
             snap_names = dataset.get_snapshots(self.snap_prefix)
-            if self.options.num_snaps > len(snap_names):
+            if len(snap_names) < self.options.num_snaps:
                 logging.info(f"No snapshots to prune on {dataset.name}")
                 continue
-            snaps_to_delete = snap_names[self.options.num_snaps :]
+            snaps_to_delete = list(reversed(snap_names))[self.options.num_snaps :]
+            logging.debug(f"Deleting snapshots: {snaps_to_delete}")
             for snap_name in snaps_to_delete:
                 dataset.delete_snapshot(snap_name)
 
-    def _get_incremental_source(self, dataset: ZfsDataSet, exclude_snap: str) -> str | None:
-        """Get the Last snapshot for incremental replication"""
-        snapshots = dataset.get_snapshots(self.snap_prefix)
-        if exclude_snap in snapshots:
-            snapshots.remove(exclude_snap)
-        return snapshots[0] if snapshots else None
+    def _get_incremental_source(self, dataset: ZfsDataSet, dest_snaps: list[str]) -> str | None:
+        """Get any Candidate snap for incremenal replication"""
+        source_snaps = dataset.get_snapshots(self.snap_prefix)
+        snaps_in_both = [snap for snap in source_snaps if snap in dest_snaps]
+        if not snaps_in_both:
+            return None
+        # The best candidate will be the latest snap in the list
+        return snaps_in_both[-1]
 
 
 def send_discord_notification(message):
