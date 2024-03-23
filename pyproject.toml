@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "infra_ng"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.11,<4.0"
 ansible = "^8.1.0"
 ansible-lint = { version = "^6.9.0", markers = "platform_system != 'Windows'" }
 pre-commit = "^3.3.3"

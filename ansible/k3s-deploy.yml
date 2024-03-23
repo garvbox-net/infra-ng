@@ -67,7 +67,6 @@
 
         - name: Install SOPS GPG key
           ansible.builtin.shell: |
-            set -o pipefail
             echo "{{ sops_gpg_key }}" | gpg --batch --pinentry-mode loopback --import /dev/stdin
           register: result
           changed_when:
@@ -112,7 +111,6 @@
 
         - name: Install Flux
           ansible.builtin.shell: |
-            set -o pipefail
             curl -s https://fluxcd.io/install.sh | bash
           become: true
           when: not stat_flux_cli.stat.exists
