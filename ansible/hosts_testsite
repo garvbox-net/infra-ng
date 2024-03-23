@@ -1,11 +1,19 @@
 ---
 testsite:
   hosts:
-    servapi4:
+    turingcm1:
+    turingcm2:
+    turingcm3:
 
 k3s_control:
   hosts:
-    servapi4:
+    turingcm1:
+
+k3s_workers:
+  hosts:
+    turingcm2:
+    turingcm3:
+
 
 k3s_cluster:
   children:
@@ -13,4 +21,9 @@ k3s_cluster:
     k3s_control:
   vars:
     cluster_name: testsite
-    flux_branch: staging
+    flux_git_type: github
+    flux_git_user: garvbox
+    flux_git_repo: gitopsokat
+    flux_git_branch: main
+    flux_git_path: "clusters/testsite"
+    flux_namespace: flux-system
