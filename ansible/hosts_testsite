@@ -24,6 +24,6 @@ k3s_cluster:
     flux_git_type: github
     flux_git_user: garvbox
     flux_git_repo: gitopsokat
-    flux_git_branch: main
+    flux_git_branch: staging
     flux_git_path: "clusters/testsite"
     flux_namespace: flux-system
