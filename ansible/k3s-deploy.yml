@@ -102,18 +102,10 @@
             - sops
             - flux
 
-        - name: Check for flux CLI
-          ansible.builtin.stat:
-            path: /usr/local/bin/flux
-          register: stat_flux_cli
-          tags:
-            - flux
-
         - name: Install Flux
           ansible.builtin.shell: |
             curl -s https://fluxcd.io/install.sh | bash
           become: true
-          when: not stat_flux_cli.stat.exists
           tags:
             - flux
 
