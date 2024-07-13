@@ -6,6 +6,13 @@ deltasite:
     kraken:
       ansible_host: kraken.deltasite.lan
       zfs_monitoring_enabled: true
+    # NOTE: The kube cluster nodes must be in this host group for vault secrets to apply
+    turingcm1:
+      ansible_host: turingcm1.deltasite.lan
+    turingcm2:
+      ansible_host: turingcm2.deltasite.lan
+    turingcm3:
+      ansible_host: turingcm3.deltasite.lan
 
 docker_host:
   hosts:
@@ -31,11 +38,11 @@ k3s_workers:
   hosts:
     turingcm2:
     turingcm3:
+
 k3s_cluster:
   children:
     # NOTE if adding the k3s groups you must add all three groups to the inventory even if
     # only using one. This is to preserve the ability to do certain tasks on control/workers only
-    k3s_workers:
     k3s_control:
       hosts:
         turingcm1:
@@ -45,7 +52,7 @@ k3s_cluster:
               - servicelb
               - metrics-server
             write-kubeconfig-mode: "0644"
-            default-local-storage-path: /rocketpool/kube/local-path-provisioner
+    k3s_workers:
         turingcm2:
         turingcm3:
   vars:
