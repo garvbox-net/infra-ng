@@ -2,10 +2,7 @@
 deltasite:
   hosts:
     deltapi4:
-    deltanetpi:
-    kraken:
-      ansible_host: kraken.deltasite.lan
-      zfs_monitoring_enabled: true
+      ansible_host: deltapi4.deltasite.lan
     # NOTE: The kube cluster nodes must be in this host group for vault secrets to apply
     turingcm1:
       ansible_host: turingcm1.deltasite.lan
@@ -17,14 +14,6 @@ deltasite:
 docker_host:
   hosts:
     deltapi4:
-    kraken:
-      deploy_traefik: true
-      deploy_apps:
-        - unifi-controller
-        - zoneminder
-      zm_data_path: /datapool/zoneminder
-      zm_db_pass: "{{ vault_zm_db_pass }}"
-      zm_db_root_pass: "{{ vault_zm_db_root_pass }}"
   vars:
     tls_domain_main: deltasite.garvbox.net
     tls_domain_sans: "*.deltasite.garvbox.net"
