@@ -1,19 +1,11 @@
 ---
 deltasite:
   hosts:
-    deltapi4:
-      ansible_host: deltapi4.deltasite.lan
-    # NOTE: The kube cluster nodes must be in this host group for vault secrets to apply
-    turingcm1:
-      ansible_host: turingcm1.deltasite.lan
-    turingcm2:
-      ansible_host: turingcm2.deltasite.lan
-    turingcm3:
-      ansible_host: turingcm3.deltasite.lan
+    deltapi5:
+      ansible_host: deltapi5.deltasite.lan
 
 docker_host:
   hosts:
-    deltapi4:
   vars:
     tls_domain_main: deltasite.garvbox.net
     tls_domain_sans: "*.deltasite.garvbox.net"
@@ -22,28 +14,13 @@ docker_host:
 
 k3s_control:
   hosts:
-    turingcm1:
-k3s_workers:
-  hosts:
-    turingcm2:
-    turingcm3:
+    deltapi5:
 
 k3s_cluster:
   children:
-    # NOTE if adding the k3s groups you must add all three groups to the inventory even if
-    # only using one. This is to preserve the ability to do certain tasks on control/workers only
     k3s_control:
       hosts:
-        turingcm1:
-          k3s_server:
-            disable:
-              - traefik
-              - servicelb
-              - metrics-server
-            write-kubeconfig-mode: "0644"
-    k3s_workers:
-        turingcm2:
-        turingcm3:
+        deltapi5:
   vars:
     cluster_name: deltasite
     flux_branch: main
